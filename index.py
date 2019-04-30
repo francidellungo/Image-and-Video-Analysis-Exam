@@ -1,9 +1,10 @@
 from fingerCoordinates import *
 from preprocessing import *
 
-path_in = './images/'
+path_in = './dataset_images/'
 path_out = './a_masks/'
 path_ell = './a_ellipses/'
+path_pts = './a_points/'
 
 paths = os.listdir(path_in)
 
@@ -23,20 +24,29 @@ colours = [
 
 
 def main():
-    for name_img in paths:
-        # read image in a grey scale way
-        img_grey = cv2.imread(path_in + name_img, cv2.IMREAD_GRAYSCALE)
 
-        # apply the preprocessing to the grey scale image
-        hand_mask, contour, _ , ellipse_mask = getHand(img_grey)
+        for name_img in paths:
+                # name_img = '031_5.JPG'
+                print('\n \n ---> ' ,name_img)
 
-        # save image in output path    
-        cv2.imwrite(path_out + name_img, hand_mask)
+                # read image in a grey scale way
+                img_grey = cv2.imread(path_in + name_img, cv2.IMREAD_GRAYSCALE)
 
-        # save image with mask background and axes and ellipse
-        cv2.imwrite(path_ell + name_img, ellipse_mask)
+                # apply the preprocessing to the grey scale image
+                # hand_mask, contour, _ , ellipse_mask = getHand(cv2.flip( img_grey, 0 ))
+                hand_mask, contour, _ , ellipse_mask = getHand( img_grey )
 
-        getFingerCoordinates(contour, hand_mask)
+                # save image in output path    
+                cv2.imwrite(path_out + name_img, hand_mask)
+
+                # save image with mask background and axes and ellipse
+                cv2.imwrite(path_ell + name_img, ellipse_mask)
+
+                # returns orinated points starting from little finger(0)
+                points_hand, _ , _ = getFingerCoordinates(contour, hand_mask)
+
+                # # save image in output path    
+                cv2.imwrite(path_pts + name_img, points_hand)
         
 
 if __name__== "__main__":

@@ -16,18 +16,14 @@ import random as rng
 def getFingerCoordinates(contours, img_binary):
         cnt = contours
         # Find the convex hull related to contours of the binary image
-        hull = cv2.convexHull(cnt, returnPoints = False)
-        
+        hull = cv2.convexHull(cnt, clockwise=True, returnPoints = False)
+
         # create an empty black image
         drawing = np.zeros((img_binary.shape[0], img_binary.shape[1], 3), np.uint8)
 
         # draw contours
         color_contours = (0, 255, 0) # green - color for contours
         cv2.drawContours(drawing, cnt, -1, color_contours, 1, 8)
-
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
-
         
         # find convexityDefects (a deviation of the hand shape from his hull is a convexity defect.)
         defects = cv2.convexityDefects(cnt,hull)
@@ -35,12 +31,22 @@ def getFingerCoordinates(contours, img_binary):
 
         # find segments at maximum distance from the relative depth points (d), these correspond to the segments between the fingers (fingertips)
         # print(defects)
-        defects_new = [list(defects[i][0][:]) for i in range(len(defects))]
+        
+        defects_new = [[list(elem[0][:]), i] for i, elem in enumerate(defects)]
+
+        # defects_new = [list(defects[i][0][:]) for i in range(len(defects))]
+
         # sort in descending order elements of defects list. Sorting is based on the distance between the farthest point and the convex hull 
-        defects_new.sort(key = lambda x: x[3], reverse= True)
+        defects_new.sort(key = lambda x: x[0][3], reverse= True)
 
         # consider only the 4 segments that have maximum distance from their defects points (they correspond to the spaces between the 5 fingers calculated at the fingertips)
         defects_new = defects_new[:4]
+       
+
+        defects_new.sort(key = lambda x: x[1], reverse= True)
+        defects_new = [ elem[0] for elem in defects_new]
+
+        
         print('defects new:', defects_new)
         
         xyi_fingers_point = []
@@ -59,12 +65,13 @@ def getFingerCoordinates(contours, img_binary):
                 cv2.circle(drawing,far,5,[0,0,255],-1)
 
                 # update coordinates of points related to each fingertips (each fingertip has still 1 or 2 points)
-                xy_tmp = list(cnt[s][0])
-                xy_tmp.append(i)
-                xyi_fingers_point.append(xy_tmp)
                 xy_tmp = list(cnt[e][0])
                 xy_tmp.append(i)
                 xyi_fingers_point.append(xy_tmp)
+                xy_tmp = list(cnt[s][0])
+                xy_tmp.append(i)
+                xyi_fingers_point.append(xy_tmp)
+ 
 
 
         print('valleys: ', xy_valleys)
@@ -104,6 +111,8 @@ def getFingerCoordinates(contours, img_binary):
                         # no other points in xyi_fingers_point list
                         xy_finger_final.append(xyi[:2])
 
+        font = cv2.FONT_HERSHEY_SIMPLEX
+
         # draw final finger representative points
         for i in range(len(xy_finger_final)):
                 xy = xy_finger_final[i]
@@ -111,10 +120,7 @@ def getFingerCoordinates(contours, img_binary):
                 print('final xy fingers', xy)
                 cv2.circle(drawing,xy,5,[255,0,0],-1)
 
-        # show all
-        cv2.imshow('img',drawing)
-        cv2.waitKey(0)
-        cv2.destroyAllWindows()
+        return drawing, xy_finger_final, xy_valleys
 
 
 def calculateDistance(x1,y1,x2,y2):  

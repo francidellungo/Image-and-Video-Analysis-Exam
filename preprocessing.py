@@ -16,10 +16,10 @@ import matplotlib.pyplot as plt
 
 def otsu_grid(img_grey, grid):
     """ 
-
-        GOAL:   the funciton create grid x grid cells,
-                and apply otsu on each of this cells.
-                Then put all sub-mask in one.
+        GOAL:   
+            the funciton create grid x grid cells,
+            and apply otsu on each of this cells.
+            Then put all sub-mask in one.
 
         PARAMS:
             (input)
@@ -31,7 +31,6 @@ def otsu_grid(img_grey, grid):
             (output)
                 - img_otsu:
                     result mask image
-
     """
     img_otsu = img_grey.copy()
 
@@ -50,9 +49,9 @@ def otsu_grid(img_grey, grid):
 
 def preprocessing(img_grey):
     """ 
-
-        GOAL:   the funciton make the preprocessing applying
-                some filter, dilation, erosion and closure.
+        GOAL:   
+            the funciton make the preprocessing applying
+            some filter, dilation, erosion and closure.
 
         PARAMS:
             (input)
@@ -62,7 +61,6 @@ def preprocessing(img_grey):
             (output)
                 - img_binary:
                     result binary image
-
     """
 
     # apply median blurr to delete sale and pepper noise
@@ -91,9 +89,9 @@ def preprocessing(img_grey):
 
 def getOneHandContour(img_binary):
     """ 
-
-        GOAL:   the funciton calculates the contours of image,
-                and take only the hand contour (the one that has the biggest area)
+        GOAL:   
+            the funciton calculates the contours of image,
+            and take only the hand contour (the one that has the biggest area)
 
         PARAMS:
             (input)
@@ -103,7 +101,6 @@ def getOneHandContour(img_binary):
             (output)
                 - contour:
                     result hand contour
-
     """
 
     # find contours of processed image
@@ -131,10 +128,10 @@ def getOneHandContour(img_binary):
 
 def getHand(img_grey):
     """ 
-
-        GOAL:   the funciton calculate on grey scale input image
-                a mask of the hand, and return the mask with also ellipse 
-                and some important params of ellipse.
+        GOAL:   
+            the funciton calculate on grey scale input image
+            a mask of the hand, and return the mask with also ellipse 
+            and some important params of ellipse.
 
         PARAMS:
             (input)
@@ -152,8 +149,6 @@ def getHand(img_grey):
                 - ellipse_mask: 
                     same image of hand_mask with drawn on the ellipse
                     and the axes
-
-
     """
 
     # get binary image after preprocessing
@@ -198,7 +193,6 @@ def getHand(img_grey):
     # get orientation of ellipse (in degree from x axis) 
     orientation = properties[0].orientation
     
-    print('\n \n')
     print('centroid coord: ' , center_of_mass)
     print('maj ax lenght:  ' , major_axis_length)
     print('min ax lenght:  ' , minor_axis_length)

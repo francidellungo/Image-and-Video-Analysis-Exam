@@ -1,6 +1,7 @@
 pdf
 a_masks
 a_ellipses
+a_points
 new_images
 .vscode
 __pycache__
