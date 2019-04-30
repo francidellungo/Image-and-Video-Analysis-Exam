@@ -14,7 +14,7 @@ import random as rng
 
 
 def getFingerCoordinates(contours, img_binary):
-        cnt = contours[0]
+        cnt = contours
         # Find the convex hull related to contours of the binary image
         hull = cv2.convexHull(cnt, returnPoints = False)
         
@@ -23,7 +23,7 @@ def getFingerCoordinates(contours, img_binary):
 
         # draw contours
         color_contours = (0, 255, 0) # green - color for contours
-        cv2.drawContours(drawing, contours, 0, color_contours, 1, 8)
+        cv2.drawContours(drawing, cnt, -1, color_contours, 1, 8)
 
         cv2.waitKey(0)
         cv2.destroyAllWindows()
