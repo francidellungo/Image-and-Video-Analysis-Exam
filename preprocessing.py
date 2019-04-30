@@ -13,25 +13,6 @@ from matplotlib.patches import Ellipse
 import matplotlib as mpl
 import matplotlib.pyplot as plt
 
-path_in = './images/'
-path_out = './a_masks/'
-path_ell = './a_ellipses/'
-
-paths = os.listdir(path_in)
-
-colours = [
-            [ (0, 0, 255)    ,   'blue'        ],
-            [ (0,128,0)      ,   'green'       ],
-            [ (173,255,47)   ,   'greenyellow' ],
-            [ (255, 160, 0)  ,   'orange'      ],
-            [ (0,238,0)      ,	'green2'       ],
-            [ (250, 246, 0)  ,   'yellow'      ],
-            [ (0,205,0)      ,   'green3'      ],
-            [ (255, 186, 230),   'pink'        ],
-            [ (255, 69, 230) ,   'purple'      ],
-            [ (0,255,0)      ,	'green1'       ],	 
-            [ (0,139,0)      ,   'green4'      ]	
-]
 
 def otsu_grid(img_grey, grid):
     """ 
@@ -163,6 +144,8 @@ def getHand(img_grey):
             (output)
                 - hand_mask: 
                     the mask of the hand
+                - contour:
+                    contour of the mask
                 - prop: 
                     array with center of mass, length of major and 
                     minor axes of ellipse, and orientation of ellipse.
@@ -255,23 +238,5 @@ def getHand(img_grey):
                 color=255, 
                 thickness=2)
     
-    return hand_mask, prop, ellipse_mask
+    return hand_mask, contour, prop, ellipse_mask
     
-
-def main():
-    for name_img in paths:
-        # read image in a grey scale way
-        img_grey = cv2.imread(path_in + name_img, cv2.IMREAD_GRAYSCALE)
-
-        # apply the preprocessing to the grey scale image
-        hand_mask, _ , ellipse_mask = getHand(img_grey)
-
-        # save image in output path    
-        cv2.imwrite(path_out + name_img, hand_mask)
-
-        # save image with mask background and axes and ellipse
-        cv2.imwrite(path_ell + name_img, ellipse_mask)
-        
-
-if __name__== "__main__":
-  main()
