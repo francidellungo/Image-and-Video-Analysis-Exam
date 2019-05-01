@@ -34,7 +34,7 @@ def main():
 
                 # apply the preprocessing to the grey scale image
                 # hand_mask, contour, _ , ellipse_mask = getHand(cv2.flip( img_grey, 0 ))
-                hand_mask, contour, _ , ellipse_mask = getHand( img_grey )
+                hand_mask, contour, centroid , ellipse_mask = getHand( img_grey )
 
                 # save image in output path    
                 cv2.imwrite(path_out + name_img, hand_mask)
@@ -43,10 +43,14 @@ def main():
                 cv2.imwrite(path_ell + name_img, ellipse_mask)
 
                 # returns orinated points starting from little finger(0)
-                points_hand, _ , _ = getFingerCoordinates(contour, hand_mask)
+                img_points_hand, finger_points , valley_points = getFingerCoordinates(contour, hand_mask)
 
-                # # save image in output path    
-                cv2.imwrite(path_pts + name_img, points_hand)
+                # save image in output path    
+                cv2.imwrite(path_pts + name_img, img_points_hand)
+
+
+
+
         
 
 if __name__== "__main__":
