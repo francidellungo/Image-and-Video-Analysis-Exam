@@ -44,9 +44,96 @@ def getImportantDefect(cnt, hull):
         defects = defects[:4]
 
         defects.sort(key = lambda x: x[1], reverse= True)
+
         defects = [ elem[0] for elem in defects]
 
         return defects
+
+
+def findFingerIndexesSimple(lenght, all_fingers_indexes):
+
+        finger_indexes = []
+        finger_indexes.append(all_fingers_indexes.pop(0))
+
+        while len(all_fingers_indexes) > 1:
+                a = all_fingers_indexes.pop(0)
+                b = all_fingers_indexes.pop(0)
+                if a < b:
+                        if lenght - b > a:
+                                c = lenght - int((a + (lenght - b))/2 )
+                        else:
+                                c = int((a + (lenght - b))/2 )
+                else:
+                        c = int((a+b)/2)
+                finger_indexes.append(c)
+        
+        finger_indexes.append(all_fingers_indexes.pop())
+
+        return finger_indexes
+
+
+# def calculateDistance(p1,p2):  
+#         """ 
+#         GOAL:   
+#                 the function returns distance between point
+#                 (x1, y1) and (x2, y2)
+
+#         PARAMS:
+#                 (input)
+#                 - (x1, y1): 
+#                         first point P1
+#                 - (x2, y2): 
+#                         second point P2
+
+#                 (output)
+#                 - dist:
+#                         euclidean distance between P1 and P2
+
+#         """
+#         x1,y1 = p1
+#         x2,y2 = p2
+#         dist = math.sqrt((x2 - x1)**2 + (y2 - y1)**2)  
+        
+#         return dist
+
+
+# def findFingerIndexesDistance(all_fingers_point):
+#         finger_points = []
+
+#         while(all_fingers_point):
+
+#                 # remove from list the first element, the most left element
+#                 xyi = all_fingers_point.pop(0)
+#                 min_dist = float('inf')
+#                 min_dist_index = None
+
+#                 # find min distance between selected point and all the others
+#                 for i in range(len(all_fingers_point)):
+#                         dist = calculateDistance(xyi, all_fingers_point[i])
+#                         if dist < min_dist:
+#                                 min_dist = dist
+#                                 min_dist_index = i
+
+#                 if min_dist_index is not None:
+#                         # calculate the length of the convexityDefects segment of which the selected point is an endpoint
+#                         index = xyi[3]
+#                         start = cnt[defects[index][0]][0]
+#                         dist_start = calculateDistance(xyi, start)
+#                         end = cnt[defects[index][1]][0]
+#                         dist_end = calculateDistance(xyi, end)
+#                         if min_dist < max(dist_start, dist_end)/2:
+#                                 # calculate midpoint of the two points that are placed on the same finger -> this is the representative of the finger considered
+#                                 finger_points.append([(xyi[0]+all_fingers_point[min_dist_index][0])/2, (xyi[1]+all_fingers_point[min_dist_index][1])/2] )
+#                                 # the point at the min distance from the first one considered is removed from the app_fingers_point list
+#                                 #  (it has been used to create the middle point)
+#                                 all_fingers_point.pop(min_dist_index)
+#                         else:
+#                                 # the representative point is only the one selected
+#                                 finger_points.append(xyi[:2])
+
+#                 else:
+#                         # no other points in app_fingers_point list
+#                         finger_points.append(xyi[:2])
 
 
 def getFingerCoordinates(cnt, img_binary):
@@ -86,105 +173,49 @@ def getFingerCoordinates(cnt, img_binary):
         defects = getImportantDefect(cnt, hull)
         
         # initialize empty lists
-        app_fingers_point = []
+        all_fingers_indexes = []
         valley_points = []
         valley_indexes = []
+
+        font = cv2.FONT_HERSHEY_SIMPLEX
         
         for i in range(len(defects)):
                 # get indexes of important points from defects
                 s,e,f,d = defects[i]
+
+                # update coordinates of valley points, that are points between each pair of fingers
+                valley_points.append(list(cnt[f][0]))
+                valley_indexes.append(f)
 
                 # get points
                 start = tuple(cnt[s][0])
                 end = tuple(cnt[e][0])
                 far = tuple(cnt[f][0])
 
-                # update coordinates of valley points, that are points between each pair of fingers
-                valley_points.append(list(cnt[f][0]))
-                valley_indexes.append(f)
-
                 # draw on image lines between fingertips and valley points 
                 cv2.line(drawing,start,end,[0,255,0],2)
+                cv2.putText(drawing, str(i), (int((start[0]+end[0])/2), int((start[1]+end[1])/2)), font, 2,(255,0,0),2,cv2.LINE_AA)
                 cv2.circle(drawing,far,5,[0,0,255],-1)
 
-                # update coordinates of points related to each fingertips (each fingertip has still 1 or 2 points)
-                xy_tmp = list(cnt[e][0])
-                xy_tmp.append(i)
-                app_fingers_point.append(xy_tmp)
-                xy_tmp = list(cnt[s][0])
-                xy_tmp.append(i)
-                app_fingers_point.append(xy_tmp)
+                all_fingers_indexes.append(e)
+                all_fingers_indexes.append(s)
+
 
 
         # find one representative point for each fingertips (if a fingertips had two points the final point is calculated as the middlepoint)
-        finger_points = []
-        while(app_fingers_point):
+        fingers_indexes = findFingerIndexesSimple(len(cnt), all_fingers_indexes)
 
-                # remove from list the first element, the most left element
-                xyi = app_fingers_point.pop(0)
-                min_dist = float('inf')
-                min_dist_index = None
+        finger_points = cnt[fingers_indexes]
 
-                # find min distance between selected point and all the others
-                for i in range(len(app_fingers_point)):
-                        dist = calculateDistance(xyi[0], xyi[1], app_fingers_point[i][0], app_fingers_point[i][1])
-                        if dist < min_dist:
-                                min_dist = dist
-                                min_dist_index = i
-
-                if min_dist_index is not None:
-                        # calculate the length of the convexityDefects segment of which the selected point is an endpoint
-                        index = xyi[2]
-                        start = cnt[defects[index][0]][0]
-                        dist_start = calculateDistance(xyi[0], xyi[1], start[0], start[1])
-                        end = cnt[defects[index][1]][0]
-                        dist_end = calculateDistance(xyi[0], xyi[1], end[0], end[1])
-                        if min_dist < max(dist_start, dist_end)/2:
-                                # calculate midpoint of the two points that are placed on the same finger -> this is the representative of the finger considered
-                                finger_points.append([(xyi[0]+app_fingers_point[min_dist_index][0])/2, (xyi[1]+app_fingers_point[min_dist_index][1])/2] )
-                                # the point at the min distance from the first one considered is removed from the app_fingers_point list
-                                #  (it has been used to create the middle point)
-                                app_fingers_point.pop(min_dist_index)
-                        else:
-                                # the representative point is only the one selected
-                                finger_points.append(xyi[:2])
-
-                else:
-                        # no other points in app_fingers_point list
-                        finger_points.append(xyi[:2])
+        print(finger_points)
 
         font = cv2.FONT_HERSHEY_SIMPLEX
 
         # draw final finger representative points
-        for i in range(len(finger_points)):
-                xy = finger_points[i]
-                xy = tuple([ int(x) for x in xy ])
+        for finger in finger_points:
+                xy = tuple([ int(x) for x in finger[0] ])
                 print('final xy fingers', xy)
                 cv2.circle(drawing,xy,5,[255,0,0],-1)
 
-        return drawing, finger_points, valley_points
-
-
-def calculateDistance(x1,y1,x2,y2):  
-        """ 
-        GOAL:   
-                the function returns distance between point
-                (x1, y1) and (x2, y2)
-
-        PARAMS:
-                (input)
-                - (x1, y1): 
-                        first point P1
-                - (x2, y2): 
-                        second point P2
-
-                (output)
-                - dist:
-                        euclidean distance between P1 and P2
-
-        """
-
-        dist = math.sqrt((x2 - x1)**2 + (y2 - y1)**2)  
-        
-        return dist
+        return drawing, finger_points, valley_points, fingers_indexes, valley_indexes
 

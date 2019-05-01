@@ -104,7 +104,7 @@ def getOneHandContour(img_binary):
     """
 
     # find contours of processed image
-    contours_bin, hierarchy_bin = cv2.findContours(img_binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    contours_bin, hierarchy_bin = cv2.findContours(img_binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
 
     # we have more than one contours in some image
     # than we need to consider only hand contour, it is 
