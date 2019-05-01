@@ -88,6 +88,7 @@ def getFingerCoordinates(cnt, img_binary):
         # initialize empty lists
         app_fingers_point = []
         valley_points = []
+        valley_indexes = []
         
         for i in range(len(defects)):
                 # get indexes of important points from defects
@@ -100,6 +101,7 @@ def getFingerCoordinates(cnt, img_binary):
 
                 # update coordinates of valley points, that are points between each pair of fingers
                 valley_points.append(list(cnt[f][0]))
+                valley_indexes.append(f)
 
                 # draw on image lines between fingertips and valley points 
                 cv2.line(drawing,start,end,[0,255,0],2)
