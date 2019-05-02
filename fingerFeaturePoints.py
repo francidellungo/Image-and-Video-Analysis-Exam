@@ -44,9 +44,7 @@ def getComplementaryValleyPoints(cnt_length, valley_indexes, fingers_indexes, r_
     all_valley.append(valley_indexes[0])
     for x, o in zip(valley_indexes[1:], complementary_valley_indexes[:-1]):
         app = [x, o]
-        print('origin ', app)
         app.sort(key = lambda x: x, reverse= True)
-        print('sorted ', app)
         all_valley.append(app[0])
         all_valley.append(app[1])
 

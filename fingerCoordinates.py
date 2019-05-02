@@ -207,14 +207,14 @@ def getFingerCoordinates(cnt, img_binary):
 
         finger_points = cnt[fingers_indexes]
 
-        print(finger_points)
+        # print(finger_points)
 
         font = cv2.FONT_HERSHEY_SIMPLEX
 
         # draw final finger representative points
         for finger in finger_points:
                 xy = tuple([ int(x) for x in finger[0] ])
-                print('final xy fingers', xy)
+                # print('final xy fingers', xy)
                 cv2.circle(drawing,xy,5,[255,0,0],-1)
 
         return drawing, finger_points, valley_points, fingers_indexes, valley_indexes

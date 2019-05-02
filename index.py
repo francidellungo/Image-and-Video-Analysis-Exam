@@ -2,6 +2,7 @@ from fingerCoordinates import *
 from preprocessing import *
 from fingerFeaturePoints import *
 from extractionShapeFeatures import *
+from geometricalFeaturesExtraction import *
 
 path_in = './dataset_images/'
 path_out = './a_masks/'
@@ -72,15 +73,18 @@ def main():
 
                 for i, (m_ptr, v_ptr, c_v_ptr) in enumerate(zip(medium_points,valley_points,comp_valley_points)):
                         cv2.circle(img_points_hand, m_ptr, 8, [255,255,255], -1)
-                        cv2.putText(img_points_hand, str(i), m_ptr, font, 2,(255,255,255),2,cv2.LINE_AA)
+                        # cv2.putText(img_points_hand, str(i), m_ptr, font, 2,(255,255,255),2,cv2.LINE_AA)
 
                         cv2.circle(img_points_hand, c_v_ptr, 8, [0,255,255], -1)
-                        cv2.putText(img_points_hand, str(i), c_v_ptr, font, 2,(0,255,255),2,cv2.LINE_AA)
+                        # cv2.putText(img_points_hand, str(i), c_v_ptr, font, 2,(0,255,255),2,cv2.LINE_AA)
                         
                         cv2.circle(img_points_hand, v_ptr, 8, [0,0,255], -1)
-                        cv2.putText(img_points_hand, str(i), v_ptr, font, 2,(0,0,255),2,cv2.LINE_AA)
+                        # cv2.putText(img_points_hand, str(i), v_ptr, font, 2,(0,0,255),2,cv2.LINE_AA)
 
                 cv2.imwrite(path_pts + name_img, img_points_hand)
+
+                _, geom_features = extractGeometricalFeatures(finger_points, medium_points)
+
 
 if __name__== "__main__":
   main()
