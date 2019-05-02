@@ -3,6 +3,7 @@ from preprocessing import *
 from fingerFeaturePoints import *
 from extractionShapeFeatures import *
 from Utils import *
+from geometricalFeaturesExtraction import *
 
 path_in = './dataset_images/'
 path_out = './a_masks/'
@@ -83,6 +84,7 @@ def main():
 
                 cv2.imwrite(path_pts + name_img, img_points_hand)
 
+                _, geom_features = extractGeometricalFeatures(finger_points, medium_points)
 
 
 if __name__== "__main__":
