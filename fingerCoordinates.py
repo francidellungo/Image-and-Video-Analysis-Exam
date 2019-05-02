@@ -194,8 +194,8 @@ def getFingerCoordinates(cnt, img_binary):
 
                 # draw on image lines between fingertips and valley points 
                 cv2.line(drawing,start,end,[0,255,0],2)
-                cv2.putText(drawing, str(i), (int((start[0]+end[0])/2), int((start[1]+end[1])/2)), font, 2,(255,0,0),2,cv2.LINE_AA)
-                cv2.circle(drawing,far,5,[0,0,255],-1)
+                # cv2.putText(drawing, str(i), (int((start[0]+end[0])/2), int((start[1]+end[1])/2)), font, 2,(255,0,0),2,cv2.LINE_AA)
+                # cv2.circle(drawing,far,5,[0,0,255],-1)
 
                 all_fingers_indexes.append(e)
                 all_fingers_indexes.append(s)

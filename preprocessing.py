@@ -232,5 +232,5 @@ def getHand(img_grey):
                 color=255, 
                 thickness=2)
     
-    return hand_mask, contour, center_of_mass, ellipse_mask
+    return hand_mask, contour, center_of_mass[::-1], ellipse_mask
     

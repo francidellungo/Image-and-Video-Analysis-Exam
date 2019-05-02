@@ -140,8 +140,8 @@ def distanceMap(cnt, r_idx):
     """
 
     dp = []
-    for i in range(len(cnt)):
-        point = cnt[(r_idx + i)%len(cnt)]
+    for point in cnt:
+        # point = cnt[i] # cnt[(r_idx + i)%len(cnt)]
         d_value = math.sqrt((cnt[r_idx][1] - point[1])**2 + (cnt[r_idx][0] - point[0])**2)  
         dp.append(d_value)
 
@@ -177,4 +177,3 @@ def orientationMap(cnt, r_idx):
 
 def waveletDecomposition(features_map):
     coeffs = wavedec(features_map, 'db1', level=5)
-    
