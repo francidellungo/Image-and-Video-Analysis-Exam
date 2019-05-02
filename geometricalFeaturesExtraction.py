@@ -25,18 +25,18 @@ def extractGeometricalFeatures(finger_points, medium_points):
     distances = []
     for i in range(5):
         print(i, finger_points[i][0], medium_points[i])
-        dist = math.hypot(finger_points[i][0][0] - medium_points[i][0], finger_points[i][0][1] - medium_points[i][1]) # Linear distance
+        dist = math.hypot(finger_points[i][0][0] - medium_points[i][0][0], finger_points[i][0][1] - medium_points[i][0][1]) # Linear distance
         distances.append(dist)
     # dist_6 : distance between 3-medium_point (index finger) and 4-medium_point (thumb finger)
-    x_med_point_3,  y_med_point_3 = medium_points[3][0], medium_points[3][1]
-    x_med_point_4,  y_med_point_4 = medium_points[4][0], medium_points[4][1]
+    x_med_point_3,  y_med_point_3 = medium_points[3][0][0], medium_points[3][0][1]
+    x_med_point_4,  y_med_point_4 = medium_points[4][0][0], medium_points[4][0][1]
 
     dist_6 = math.hypot(x_med_point_3 - x_med_point_4, y_med_point_3- y_med_point_4)
     distances.append(dist_6)
 
     # dist_7 : distance between 3-medium_point (index finger) and 0-medium_point (little finger)
-    x_med_point_3,  y_med_point_3 = medium_points[3][0], medium_points[3][1]
-    x_med_point_0,  y_med_point_0 = medium_points[0][0], medium_points[0][1]
+    x_med_point_3,  y_med_point_3 = medium_points[3][0][0], medium_points[3][0][1]
+    x_med_point_0,  y_med_point_0 = medium_points[0][0][0], medium_points[0][0][1]
 
     dist_7 = math.hypot(x_med_point_3 - x_med_point_0, y_med_point_3- y_med_point_0)
     distances.append(dist_7)
