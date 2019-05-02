@@ -177,10 +177,10 @@ def getHand(img_grey):
     properties = regionprops(labeled_foreground, img_binary, coordinates='xy')
 
     # get center of mass of pixels (also called centroid)
-    center_of_mass = properties[0].centroid
+    center_of_mass = properties[0].centroid[::-1]
 
     # get integer values of center of mass
-    y0, x0 = center_of_mass
+    x0, y0 = center_of_mass
     y0, x0 = int(y0), int(x0)
 
     # exists also weighted center of mass
@@ -232,5 +232,5 @@ def getHand(img_grey):
                 color=255, 
                 thickness=2)
     
-    return hand_mask, contour, center_of_mass[::-1], ellipse_mask
+    return hand_mask, contour, center_of_mass, ellipse_mask
     

@@ -13,7 +13,8 @@ def getReferencePoint(contour, fingers_indexes, center_of_mass):
     """
 
     middle_index = fingers_indexes[2]
-    middle_point = np.asarray(contour[middle_index])
+    print(middle_index)
+    middle_point = contour[middle_index]
     
     semi_contour = contour[fingers_indexes[0]:fingers_indexes[-1]]
 
@@ -29,7 +30,7 @@ def getReferencePoint(contour, fingers_indexes, center_of_mass):
     return r_point, r_index
 
 
-def getComplementaryValleyPoints(cnt_length, valley_indexes, fingers_indexes, r_index):
+def getComplementaryValleyPoints(cnt_length, valley_indexes, fingers_indexes):
     
     valley_indexes.insert(0, valley_indexes[0])
 
@@ -44,9 +45,7 @@ def getComplementaryValleyPoints(cnt_length, valley_indexes, fingers_indexes, r_
     all_valley.append(valley_indexes[0])
     for x, o in zip(valley_indexes[1:], complementary_valley_indexes[:-1]):
         app = [x, o]
-        print('origin ', app)
         app.sort(key = lambda x: x, reverse= True)
-        print('sorted ', app)
         all_valley.append(app[0])
         all_valley.append(app[1])
 
@@ -63,16 +62,28 @@ def getMediumFingerPoint(valley_points, complementary_valley_points):
 
     for v_point, c_v_point in zip(valley_points, complementary_valley_points):
         app = [v_point, c_v_point]
-        medium_points.append(np.mean(app, axis = 0))
+        medium_points.append(np.mean(app, axis = 0).tolist())
 
     return medium_points
 
-def calculateMediumPoints(contour, valley_indexes, fingers_indexes, r_index):
+def calculateMediumPoints(contour, valley_indexes, fingers_indexes):
 
     # valley_indexes and valley_points have 5 points updating after complementary search
-    comp_valley_indexes, valley_indexes = getComplementaryValleyPoints(len(contour), valley_indexes, fingers_indexes, r_index)
+    comp_valley_indexes, valley_indexes = getComplementaryValleyPoints(len(contour), valley_indexes, fingers_indexes)
 
     medium_points = getMediumFingerPoint(contour[valley_indexes], contour[comp_valley_indexes])
 
     return medium_points, valley_indexes, comp_valley_indexes
     
+
+def updateContour(contour, valley_indexes, fingers_indexes, r_index):
+    length = len(contour)
+
+    updated_contour = np.concatenate((contour[r_index::],contour[:r_index:]))
+
+    print(len(contour), len(updated_contour))
+    
+    valley_indexes  = [ (index + length - r_index)%length  for index in valley_indexes]
+    fingers_indexes = [ (index + length - r_index)%length  for index in fingers_indexes]
+
+    return updated_contour, valley_indexes, fingers_indexes

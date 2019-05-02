@@ -1,128 +1,63 @@
 import cv2
 import numpy as np
-from matplotlib import pyplot as plt
-from scipy import ndimage,misc
 
-global window_size, alpha, threshold 
-alpha = 0.04
-window_size = 3
-threshold = 0.5
+# print(cv2.__version__)
 
-print(cv2.__version__)
+def draw(img, contour, cnt_color, point_lists, point_list_colors = [255,255,255], text_colors = [255,255,255]):
+	
+	if img is None:
+		shape = getShape(contour, 150, 50)
+		img = np.zeros((shape[0], shape[1], 3), np.uint8)
 
-# img = cv2.imread('google.jpg', 0)
-# imS = cv2.resize(img, (960, 540))                    # Resize image
-# cv2.imshow("output", imS)
-# cv2.waitKey(0)
-# cv2.destroyAllWindows()
+	if len(contour) > 0:
+		cv2.drawContours(img, contour, -1, cnt_color if cnt_color else (0, 255, 0), 1, 8)   # green color
 
-def readImage(imagePath):
-    image = cv2.imread(imagePath)
-    return image
+	if len(point_lists) > 0:
+		for i, point in enumerate(point_lists):
+			xy = tuple([ int(x) for x in point[0] ])
+			cv2.circle(img,xy,5, point_list_colors,-1)
 
-def displayImage(title, image):
-	plt.imshow(image)
-	plt.title(title)
-	plt.show()
-	misc.imsave(str(title)+"___"+str(alpha)+".png",image)
-
-def findGradients(image):
-	I_x = cv2.Sobel(image,cv2.CV_64F,1,0,ksize=5)
-	I_y = cv2.Sobel(image,cv2.CV_64F,0,1,ksize=5)
-	return I_x, I_y
-
-def window_hessian(row, col, center, Ix_square, Iy_square, Ix_Iy):
-        Ix2 = Ix_square[row-center:row+center+1, col-center:col+center+1]
-        Ixy = Ix_Iy[row-center:row+center+1, col-center:col+center+1]
-        Iy2 = Iy_square[row-center:row+center+1, col-center:col+center+1]
-        return Ix2.sum(), Ixy.sum(), Iy2.sum()
-
-def gradient_squares(Ix, Iy):
-	Ix_square = Ix*Ix
-	Iy_square = Iy*Iy
-	Ix_Iy = Ix*Iy
-	return Ix_square, Iy_square, Ix_Iy
-
-def harris_corners(image):
-	global threshold
-	center = int(window_size/2)
-	numRows = image.shape[0]
-	numCols = image.shape[1]
-	harris_img = image.copy()
-	Ix, Iy = findGradients(image)
-	Ix_square, Iy_square, Ix_Iy = gradient_squares(Ix, Iy)
-	R= np.minimum(Ix_square, Iy_square)
-	threshold = threshold * R.max()
-	for row in range(center, numRows-center):
-		for col in range(center, numCols-center):
-			A, B, C = window_hessian(row, col, center, Ix_square, Iy_square, Ix_Iy)
-			Det = A*C -B*B
-			Trace = A + C
-			f = Det - alpha*(Trace*Trace)
-			if f > threshold*100000000:
-				harris_img.itemset((row, col, 0), 0)
-				harris_img.itemset((row, col, 1), 0)
-				harris_img.itemset((row, col, 2), 255)
-	return harris_img
+	if text_colors:
+		font = cv2.FONT_HERSHEY_SIMPLEX
+		for i, point in enumerate(point_lists):
+			xy = tuple([ int(x[0]) for x in point[0] ])
+			cv2.putText(img, str(i), point, font, 2, text_colors ,2,cv2.LINE_AA)
+	
+	return img
 
 
-def shi_tomasi_corners(image):
-	global threshold
-	center = int(window_size/2)
-	numRows = image.shape[0]
-	numCols = image.shape[1]
-	st_img = image.copy()
-	Ix, Iy = findGradients(image)
-	Ix_square, Iy_square, Ix_Iy = gradient_squares(Ix, Iy)
-	R= np.minimum(Ix_square, Iy_square)
-	threshold = threshold * R.max()
-	for row in range(center, numRows-center):
-		for col in range(center, numCols-center):
-			A, B, C = window_hessian(row, col, center, Ix_square, Iy_square, Ix_Iy)
-			H = np.array([[A,B],[B,C]])
-			eigen = np.linalg.eigvals(H)
-			f = min(eigen)
-			if f > threshold:
-				st_img.itemset((row, col, 0), 0)
-				st_img.itemset((row, col, 1), 0)
-				st_img.itemset((row, col, 2), 255)
-	return st_img
+def rotateHand(shape, contour, angle, centre_of_mass, fingers_indexes, valley_indexes):
+	# create an empty black image
+	xm, ym = centre_of_mass
+	
+	angle = 90 - angle
+	if angle < -90 or angle > 90:
+		angle = 180 + angle
+	angle = np.deg2rad(angle)
 
-def lambda_method_corners(image):
-	global threshold
-	center = int(window_size/2)
-	numRows = image.shape[0]
-	numCols = image.shape[1]
-	lambda_img = image.copy()
-	Ix, Iy = findGradients(image)
-	Ix_square, Iy_square, Ix_Iy = gradient_squares(Ix, Iy)
-	R= np.minimum(Ix_square, Iy_square)
-	threshold = threshold * R.max()
-	for row in range(center, numRows-center):
-		for col in range(center, numCols-center):
-			A, B, C = window_hessian(row, col, center, Ix_square, Iy_square, Ix_Iy)
-			H = np.array([[A,B],[B,C]])
-			eigen = np.linalg.eigvals(H)
-			min_eigen = min(eigen)
-			Det = eigen[0]*eigen[1]
-			Trace = eigen[0]+eigen[1]
-			f = Det-(alpha*Trace)
-			if f > threshold*100000000:
-				lambda_img.itemset((row, col, 0), 0)
-				lambda_img.itemset((row, col, 1), 0)
-				lambda_img.itemset((row, col, 2), 255)
-	return lambda_img
+	print(np.asanyarray(contour))
+
+	contour_rotated = [ [[ int(xm + (point[0][0]-xm)*np.cos(angle) - (point[0][1]-ym)*np.sin(angle)) , int(ym + 50 +(point[0][0]-xm)*np.sin(angle) + (point[0][1]-ym) * np.cos(angle))]] for point in contour ]
+
+	print(np.asanyarray(contour_rotated))
+
+	hand_mask_rotated = np.zeros(getShape(contour_rotated, 150, 50), np.uint8)
+
+	# create polylines from contour points, and draw if filled in image
+	cv2.fillPoly(hand_mask_rotated, pts = np.array([contour_rotated], dtype=np.int32), color=(255))
+	# print(list(fingers_indexes))
+	# print(np.array(list(valley_indexes)))
+	print(np.array(list(fingers_indexes)).astype(int))
+
+	return hand_mask_rotated, [ contour_rotated[i] for i in fingers_indexes], [ contour_rotated[i] for i in valley_indexes], np.array(contour_rotated)
 
 
-image = readImage('.\images\hand3.jpg')
+def getShape(contour, w_bias, h_bias):
 
-print(image.shape)
-print('harris')
-img = harris_corners(image)
-displayImage("Harris", img)
-print('tomasi')
-img = shi_tomasi_corners(image)
-displayImage("Shi-Tomasi", img)
-print('lambda')
-img = lambda_method_corners(image)
-displayImage("lambda", img)
+	x = [ point[0][0] for point in contour]
+	y = [ point[0][1] for point in contour]
+
+	width  = int( np.max(x) + w_bias)
+	heigth = int( np.max(y) + h_bias)
+	
+	return tuple([heigth, width])

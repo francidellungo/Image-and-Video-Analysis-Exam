@@ -1,7 +1,8 @@
 pdf
 a_masks
-a_ellipses
+a_rotates
 a_points
 new_images
 .vscode
+.DS_Store
 __pycache__

@@ -3,15 +3,22 @@ import math
 from pywt import wavedec
 
 W = [
-    -20, # j = 0 little finger
-    -10, # j = 1 ring finger
-    +10, # j = 2 medium finger
-    +30, # j = 3 index finger
-    +60  # j = 4 thumb finger
+    +20, # j = 0 little finger
+    +10, # j = 1 ring finger
+    -10, # j = 2 medium finger
+    -30, # j = 3 index finger
+    -60  # j = 4 thumb finger
 ]
 
+K = [
+    +70, # j = 0 little finger
+    +80, # j = 1 ring finger
+    -80, # j = 2 medium finger
+    -60, # j = 3 index finger
+    -30  # j = 4 thumb finger
+]
 
-def fingerAngle(p, m):
+def getAngle(p, m):
     """ 
     GOAL:   
         the function returns angle between segment from p to m 
@@ -38,8 +45,11 @@ def fingerAngle(p, m):
 
     # returns angle in the 1 and 4 quadrant, then we need to see negative angle
     # Its real part is in [-pi/2, pi/2]
-    angle = np.arctan((m[1]-p[1])/(m[0]-p[0]))
-    return -angle
+    m = m[0]
+    p = p[0]
+    print(m, p)
+    phi = np.rad2deg(np.arctan((m[1]-p[1])/(m[0]-p[0])))
+    return phi
 
 
 def allignFinger(cnt, m, idx, phi, c_idx, v_idx):
@@ -73,20 +83,26 @@ def allignFinger(cnt, m, idx, phi, c_idx, v_idx):
         - cnt: 
             contour of hand with one finger modified points
     """
+    m = m[0]
 
     # calculate psi based on paper method
-    psi = W[idx] - phi
+    psi = K[idx] - phi
+    print(psi)
+    if psi < -90 or psi > 90:
+        psi = 180 + psi
+    psi = np.deg2rad(psi)
 
     # mooving all points between c_idx and v_idx on angle psi
-    new_points = [ [ m[0] + (point[0]-m[0])*np.cos(psi) - (point[1]-m[1])*np.sin(psi) , m[1] + (point[0]-m[0])*np.sin(psi) - (point[1]-m[1]) * np.cos(psi)] for point in cnt[ c_idx : v_idx ] ]
+    new_points = [ [[ m[0] + (point[0][0]-m[0])*np.cos(psi) - (point[0][1]-m[1])*np.sin(psi) , m[1] + (point[0][0]-m[0])*np.sin(psi) + (point[0][1]-m[1]) * np.cos(psi)]] for point in cnt[ c_idx : v_idx ] ]
     
     # changing original contour points with the new found
+    print(len(cnt[ c_idx : v_idx ]), len(new_points))
     cnt[ c_idx : v_idx ] = new_points
-
+    
     return cnt
 
 
-def fingerRegistration(cnt, p_list, m_list, c_list, v_list):
+def fingerRegistration(cnt, center_of_mass, p_list, m_list, c_list, v_list):
     """ 
     GOAL:   
         the function update contour preparing it for 
@@ -110,10 +126,18 @@ def fingerRegistration(cnt, p_list, m_list, c_list, v_list):
             contour of hand with modified points
     """
 
+    # origin = fingerAngle(p_list[2], [center_of_mass])
+    # print(origin)
+
+    # if origin < 0:
+    #     origin = 90 + origin
+    # else:
+    #     origin = - (90 - origin)
+
     for i, (p, m) in enumerate(zip(p_list, m_list)):
         
         # calculate phi angle
-        phi = fingerAngle(p, m)
+        phi = getAngle(p, m)
         
         # update partial contour on one finger angle update
         cnt = allignFinger(cnt, m, i, phi, c_list[i], v_list[i])
@@ -176,4 +200,6 @@ def orientationMap(cnt, r_idx):
 
 
 def waveletDecomposition(features_map):
-    coeffs = wavedec(features_map, 'db1', level=5)
+    coeffs = wavedec(features_map, 'db5')
+    print(coeffs)
+
