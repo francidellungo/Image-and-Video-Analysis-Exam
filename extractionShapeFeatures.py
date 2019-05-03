@@ -1,6 +1,6 @@
 import numpy as np
 import math
-from pywt import wavedec, families
+from pywt import wavedec #, families
 
 W = [
     +20, # j = 0 little finger
@@ -234,8 +234,8 @@ def waveletDecomposition(features_map):
             coefficients given by wavedec function
     """
     # coeffs = wavedec(features_map, 'db5')
-    wavelet = families()
-    print(wavelet[0])
+    # wavelet = families()
+    # print(wavelet[0])
     coeffs = wavedec(features_map, 'db1', mode='symmetric', level=5, axis=-1)
     return coeffs
 
