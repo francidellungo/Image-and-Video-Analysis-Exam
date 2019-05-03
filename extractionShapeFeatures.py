@@ -1,6 +1,6 @@
 import numpy as np
 import math
-from pywt import wavedec
+from pywt import wavedec, families
 
 W = [
     +20, # j = 0 little finger
@@ -184,7 +184,8 @@ def distanceMap(cnt, r_idx):
     dp = []
     for point in cnt:
         # point = cnt[i] # cnt[(r_idx + i)%len(cnt)]
-        d_value = math.sqrt((cnt[r_idx][1] - point[1])**2 + (cnt[r_idx][0] - point[0])**2)  
+        # print(cnt[r_idx][0][0][0], point[0])
+        d_value = math.sqrt((cnt[r_idx][0][0][0][1] - point[0][1])**2 + (cnt[r_idx][0][0][0][0] - point[0][0])**2)  
         dp.append(d_value)
 
     return dp
@@ -206,18 +207,63 @@ def orientationMap(cnt, r_idx):
         - op: 
             orientation map of each points in clockwise orientation
     """
+    
 
     sigma = 10**-10
     op = []
     for i in range(len(cnt)):
         point = cnt[(r_idx + i)%len(cnt)]
-        o_value = 90 + np.arctan((cnt[r_idx][0] - point[0])/(cnt[r_idx][1] - point[1] + sigma))
+        o_value = 90 + np.arctan((cnt[r_idx][0][0][0][1] - point[0][0][0][1])/(cnt[r_idx][0][0][0][0] - point[0][0][0][0] + sigma))
         op.append(o_value)
 
     return op
 
 
 def waveletDecomposition(features_map):
-    coeffs = wavedec(features_map, 'db5')
-    print(coeffs)
+    """ 
+    GOAL:   
+        extract coefficients through waveletDecomposition Daubechies 1 (db1)
 
+    PARAMS:
+        (input)
+        - features_map: 
+            feature map (orientation map or distance map)
+
+        (output)
+        - coeffs:
+            coefficients given by wavedec function
+    """
+    # coeffs = wavedec(features_map, 'db5')
+    wavelet = families()
+    print(wavelet[0])
+    coeffs = wavedec(features_map, 'db1', mode='symmetric', level=5, axis=-1)
+    return coeffs
+
+
+def extractShapeFeatures(cnt, r_idx):
+    """ 
+    GOAL:   
+        extract shape features (50 coefficients for distance_features and orientation_features)
+
+    PARAMS:
+        (input)
+        - cnt: 
+            contour of hand
+        - r_idx: 
+            index of reference point on the contour
+
+        (output)
+        - distance_features:
+            first 50 coefficients given by waveletDecomposition applied to distanceMap
+        - orientation_features: 
+            first 50 coefficients given by waveletDecomposition applied to orientationMap
+    """
+    dp = distanceMap(cnt, r_idx)
+    op = orientationMap(cnt, r_idx)
+    
+    distance_coeffs = waveletDecomposition(dp)
+    orientation_coeffs = waveletDecomposition(op)
+    distance_features = distance_coeffs[:50]
+    orientation_features = orientation_coeffs[:50]
+
+    return distance_features, orientation_features
