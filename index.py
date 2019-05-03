@@ -84,7 +84,11 @@ def main():
 
                 cv2.imwrite(path_pts + name_img, img_points_hand)
 
-                _, geom_features = extractGeometricalFeatures(finger_points, medium_points)
+                # to extract features need to use new points
+                _, geom_features = extractGeometricalFeatures(r_based_contour[r_based_fingers_indexes], medium_points)
+                
+                distance_features, orientation_features = extractShapeFeatures(r_based_contour, r_point)
+
 
 
 if __name__== "__main__":
