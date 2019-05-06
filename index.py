@@ -84,10 +84,14 @@ def main():
 
                 cv2.imwrite(path_pts + name_img, img_points_hand)
 
-                # to extract features need to use new points
+                # to extract geometrical features we used non rotated fingers 
                 _, geom_features = extractGeometricalFeatures(r_based_contour[r_based_fingers_indexes], medium_points)
+
+                print("n geom features: ",len(geom_features))
                 
-                distance_features, orientation_features = extractShapeFeatures(r_based_contour, r_point)
+                # to extract shape features updated contours are used
+                distance_features, orientation_features = extractShapeFeatures(updated_contour, r_point)
+                print("n dist, orient features: ",len(distance_features), len(orientation_features))
 
 
 

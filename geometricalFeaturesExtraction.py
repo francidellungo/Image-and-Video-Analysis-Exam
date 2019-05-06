@@ -23,8 +23,9 @@ def extractGeometricalFeatures(finger_points, medium_points):
     """
 
     distances = []
-    for i in range(5):
-        print(i, finger_points[i][0], medium_points[i])
+    # distances are calculated starting from thumb finger
+    for i in range(4,-1, -1):
+        # print(i, finger_points[i][0], medium_points[i])
         dist = math.hypot(finger_points[i][0][0] - medium_points[i][0][0], finger_points[i][0][1] - medium_points[i][0][1]) # Linear distance
         distances.append(dist)
     # dist_6 : distance between 3-medium_point (index finger) and 4-medium_point (thumb finger)

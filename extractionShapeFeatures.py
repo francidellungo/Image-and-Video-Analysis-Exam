@@ -47,7 +47,7 @@ def getAngle(p, m):
     # Its real part is in [-pi/2, pi/2]
     m = m[0]
     p = p[0]
-    print(m, p)
+    # print(m, p)
     phi = np.rad2deg(np.arctan((m[1]-p[1])/(m[0]-p[0])))
     return phi
 
@@ -87,7 +87,7 @@ def allignFinger(cnt, m, idx, phi, c_idx, v_idx):
 
     # calculate psi based on paper method
     psi = K[idx] - phi
-    print('psi angle:', psi)
+    # print('psi angle:', psi)
     if psi < -90 or psi > 90:
         psi = 180 + psi
     psi = np.deg2rad(psi)
@@ -95,16 +95,16 @@ def allignFinger(cnt, m, idx, phi, c_idx, v_idx):
     # number of elements whose new coordinates are calculated as an average mean between old points and new one
     n_smooth_el = int(abs(c_idx-v_idx)/6)
     
-    print('c_idx, v_idx:', c_idx, v_idx)
-    new_c_index = c_idx + n_smooth_el
-    new_v_index = v_idx - n_smooth_el
-    print('new_c_idx, new_v_idx:', new_c_index, new_v_index)
+    # print('c_idx, v_idx:', c_idx, v_idx)
+    c_smooth_index = (c_idx + n_smooth_el)
+    v_smooth_index = v_idx - n_smooth_el
+
     # mooving all points between c_idx and v_idx on angle psi
     new_points = [ [[ m[0] + (point[0][0]-m[0])*np.cos(psi) - (point[0][1]-m[1])*np.sin(psi) , m[1] + (point[0][0]-m[0])*np.sin(psi) + (point[0][1]-m[1]) * np.cos(psi)]] for point in cnt[ c_idx : v_idx ] ]
     
     for i in range(n_smooth_el):
         alpha = i/n_smooth_el
-        print(cnt[v_idx+i][0][0], new_points[i][0])
+        # print(cnt[v_idx+i][0][0], new_points[i][0])
         
         cnt[v_idx-i][0][0] = alpha*new_points[-i][0][0] + (1-alpha) * cnt[v_idx-i][0][0]
         cnt[v_idx-i][0][1] = alpha*new_points[-i][0][1] + (1-alpha) * cnt[v_idx-i][0][1]
@@ -113,10 +113,11 @@ def allignFinger(cnt, m, idx, phi, c_idx, v_idx):
         cnt[c_idx+i][0][1] = alpha*new_points[i][0][1] + (1-alpha) * cnt[c_idx+i][0][1]
 
     # changing original contour points with the new found
-    print(len(cnt[ c_idx : v_idx ]), len(cnt[ new_c_index : new_v_index ]), len(new_points[n_smooth_el: len(cnt[ c_idx : v_idx ])-n_smooth_el]))
+    print(len(cnt[ c_idx : v_idx ]), len(cnt[ c_smooth_index : v_smooth_index ]), len(new_points[n_smooth_el: len(cnt[ c_idx : v_idx ])-n_smooth_el]))
     
-    cnt[ new_c_index : new_v_index ] = new_points[n_smooth_el: len(cnt[ c_idx : v_idx ])-n_smooth_el]
-    
+    cnt[ c_smooth_index : v_smooth_index ] = new_points[n_smooth_el: len(cnt[ c_idx : v_idx ])-n_smooth_el]
+
+
     return cnt
 
 
@@ -263,7 +264,7 @@ def extractShapeFeatures(cnt, r_idx):
     
     distance_coeffs = waveletDecomposition(dp)
     orientation_coeffs = waveletDecomposition(op)
-    distance_features = distance_coeffs[:50]
-    orientation_features = orientation_coeffs[:50]
+    distance_features = distance_coeffs[0][:50]
+    orientation_features = orientation_coeffs[0][:50]
 
     return distance_features, orientation_features

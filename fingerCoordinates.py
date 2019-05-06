@@ -34,17 +34,23 @@ def getImportantDefect(cnt, hull):
         # find convexityDefects (a deviation of the hand shape from his hull is a convexity defect.)
         defects = cv2.convexityDefects(cnt, hull)
 
+
+        # first defect become the last one (in case of the first one corrisponds to the one between little and ring fingers)
+        defects = np.concatenate((defects[1::],[defects[0]]))
+
         # find segments at maximum distance from the relative depth points (d), these correspond to the segments between the fingers (fingertips)        
         defects = [[list(elem[0][:]), i] for i, elem in enumerate(defects)]
 
+
         # sort in descending order elements of defects list. Sorting is based on the distance between the farthest point and the convex hull 
         defects.sort(key = lambda x: x[0][3], reverse= True)
+        
 
         # consider only the 4 segments that have maximum distance from their defects points (they correspond to the spaces between the 5 fingers calculated at the fingertips)
         defects = defects[:4]
 
         defects.sort(key = lambda x: x[1], reverse= True)
-
+        
         defects = [ elem[0] for elem in defects]
 
         return defects
@@ -101,7 +107,8 @@ def getFingerCoordinates(cnt, img_binary):
         
         # obtain the 4 important defects from contourn and hull of hand image
         defects = getImportantDefect(cnt, hull)
-        
+
+
         # initialize empty lists
         all_fingers_indexes = []
         valley_points = []

@@ -13,7 +13,7 @@ def getReferencePoint(contour, fingers_indexes, center_of_mass):
     """
 
     middle_index = fingers_indexes[2]
-    print(middle_index)
+    # print(middle_index)
     middle_point = contour[middle_index]
     
     semi_contour = contour[fingers_indexes[0]:fingers_indexes[-1]]
@@ -81,7 +81,7 @@ def updateContour(contour, valley_indexes, fingers_indexes, r_index):
 
     updated_contour = np.concatenate((contour[r_index::],contour[:r_index:]))
 
-    print(len(contour), len(updated_contour))
+    # print(len(contour), len(updated_contour))
     
     valley_indexes  = [ (index + length - r_index)%length  for index in valley_indexes]
     fingers_indexes = [ (index + length - r_index)%length  for index in fingers_indexes]

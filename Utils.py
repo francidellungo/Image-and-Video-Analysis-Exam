@@ -35,11 +35,11 @@ def rotateHand(shape, contour, angle, centre_of_mass, fingers_indexes, valley_in
 		angle = 180 + angle
 	angle = np.deg2rad(angle)
 
-	print(np.asanyarray(contour))
+	# print(np.asanyarray(contour))
 
 	contour_rotated = [ [[ int(xm + (point[0][0]-xm)*np.cos(angle) - (point[0][1]-ym)*np.sin(angle)) , int(ym + 50 +(point[0][0]-xm)*np.sin(angle) + (point[0][1]-ym) * np.cos(angle))]] for point in contour ]
 
-	print(np.asanyarray(contour_rotated))
+	# print(np.asanyarray(contour_rotated))
 
 	hand_mask_rotated = np.zeros(getShape(contour_rotated, 150, 50), np.uint8)
 
