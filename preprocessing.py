@@ -33,6 +33,8 @@ def otsu_grid(img_grey, grid):
                     result mask image
     """
     img_otsu = img_grey.copy()
+    sublen = int(len(img_grey)/grid)
+    sublon = int(len(img_grey[0])/grid)
 
     for i in range(grid):
         for j in range(grid):
@@ -40,9 +42,7 @@ def otsu_grid(img_grey, grid):
             th, im = cv2.threshold(np.array([ np.array(row[j*int(len(img_grey[0])/grid):(j+1)*int(len(img_grey[0])/grid)]) for row in img_grey[i*int(len(img_grey)/grid):(i+1)*int(len(img_grey)/grid)]]), 127, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
 
             # unify image cell in one unique image, cell by cell
-            for k in range(len(im)):
-                for y in range(len(im[0])):
-                    img_otsu[i*int(len(img_grey)/grid)+k][j*int(len(img_grey[0])/grid)+y] = im[k][y]
+            img_otsu[np.ix_(range(i*sublen, (i+1)*sublen), range(j*sublon, (j+1)*sublon))] = im
 
     return img_otsu
     
@@ -73,7 +73,7 @@ def preprocessing(img_grey):
     img_binary = otsu_grid(img_median, grid)
 
     # dilation with rectangle of dimension 6 x 16 
-    kernel = rectangle(16, 6)
+    kernel = rectangle(6, 16)
     img_binary = dilation(img_binary, kernel)
 
     # erosion with square of dimension 9 x 9 
@@ -81,7 +81,7 @@ def preprocessing(img_grey):
     img_binary = erosion(img_binary, kernel)
 
     # closure with elliptical kernel of dimension 16 x 16
-    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(16, 16))
+    kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(21, 21))
     img_binary = cv2.morphologyEx(img_binary, cv2.MORPH_CLOSE, kernel)
 
     return img_binary
@@ -179,6 +179,7 @@ def getHand(img_grey):
     # get center of mass of pixels (also called centroid)
     center_of_mass = properties[0].centroid[::-1]
 
+    """
     # get integer values of center of mass
     x0, y0 = center_of_mass
     y0, x0 = int(y0), int(x0)
@@ -231,6 +232,7 @@ def getHand(img_grey):
                 endAngle=360, 
                 color=255, 
                 thickness=2)
-    
-    return hand_mask, contour, center_of_mass, ellipse_mask
+    """
+
+    return hand_mask, contour, center_of_mass, None
     

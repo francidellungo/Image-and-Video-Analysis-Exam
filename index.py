@@ -4,6 +4,10 @@ from fingerFeaturePoints import *
 from extractionShapeFeatures import *
 from Utils import *
 from geometricalFeaturesExtraction import *
+from ComputeScores import *
+from tempfile import TemporaryFile
+
+outfile = TemporaryFile()
 
 path_in = './dataset_images/'
 path_out = './a_masks/'
@@ -27,12 +31,75 @@ colours = [
 ]
 
 
+measures = [
+            ( 0    ,   'l1'        ),
+            ( 0  ,   'euclidean'    ),
+            ( 0   ,   'cosine' ),
+            ( 1  ,   'chi-square'      )	
+]
+
+
+
+
 def main():
 
-        for name_img in paths:
-                # name_img = '035_3.JPG'
-                print('\n \n ---> ' ,name_img)
+        genuine_scores = []
+        imposter_scores = []
 
+        n_imgs = 5
+        n_people = int( len([name for name in paths])/5 )
+        print('persone: ',n_people)
+
+        w, h = n_imgs, n_people
+
+        # saveFile(w, h)
+
+        geom_scores = np.load('./pickles/geom.npy')
+        distance_scores = np.load('./pickles/distance.npy')
+        orientation_scores = np.load('./pickles/orientation.npy')
+
+        for cod, measure in measures:
+                genuine_scores_list, imposter_scores_list, centroids_indexes = calculateScores(geom_scores, cod, measure)
+
+        # geom_Euclid_dist_new, geom_L1_dist_new, y_geom_genuine_predicted = calculateScores(n_people, n_imgs, geom_scores, distance_scores, orientation_scores)
+
+        # print(len(geom_Euclid_dist_new), geom_Euclid_dist_new)
+
+        # print(len(geom_L1_dist_new), geom_L1_dist_new)
+
+
+        # for person in range(n_people):
+        #         print('person : ', person)
+        #         unos = [ 1 for i in range(len(y_geom_genuine_predicted[person]))]
+        #         TP, FP, TN, FN = performanceMeasure(unos, y_geom_genuine_predicted[person])
+        #         print(TP, FP, TN, FN)
+        print(genuine_scores_list, imposter_scores_list, centroids_indexes)
+        
+
+if __name__== "__main__":
+  main()
+
+
+def saveFile(w, h):
+        # Matrix = [[0 for x in range(w)] for y in range(h)] 
+
+        # matrices with scores for all people and all imgs ( features_scores[person][img] )
+
+        geom_scores = [[0 for x in range(w)] for y in range(h)]
+        distance_scores = [[0 for x in range(w)] for y in range(h)]
+        orientation_scores = [[0 for x in range(w)] for y in range(h)]
+        
+        print('n pers:', len(geom_scores), 'n images: ', len(geom_scores[0]))
+        curr_img = '001_1.JPG'
+        curr_person, curr_img = curr_img.replace('.JPG', '').split("_")[:]
+
+        for name_img in paths:
+
+                print('---> ',name_img)
+                new_name_img = name_img.replace('.JPG', '')
+                person_idx, img_idx = new_name_img.split("_")[:]
+                print(person_idx, img_idx)
+                
                 # read image in a grey scale way
                 img_grey = cv2.imread(path_in + name_img, cv2.IMREAD_GRAYSCALE)
 
@@ -93,7 +160,15 @@ def main():
                 distance_features, orientation_features = extractShapeFeatures(updated_contour, r_point)
                 print("n dist, orient features: ",len(distance_features), len(orientation_features))
 
+                geom_scores[int(person_idx)-1][int(img_idx)-1] = geom_features
+                distance_scores[int(person_idx)-1][int(img_idx)-1] = distance_features
+                orientation_scores[int(person_idx)-1][int(img_idx)-1] = orientation_features
 
 
-if __name__== "__main__":
-  main()
+        geom_scores = np.array(geom_scores)
+        distance_scores = np.array(distance_scores)
+        orientation_scores = np.array(orientation_scores)
+
+        np.save('./pickles/geom', geom_scores)
+        np.save('./pickles/distance', distance_scores)
+        np.save('./pickles/orientation', orientation_scores)

@@ -75,6 +75,8 @@ def findFingerIndexesSimple(lenght, all_fingers_indexes):
         
         finger_indexes.append(all_fingers_indexes.pop())
 
+        finger_indexes = [(finger_indexes[i]) % lenght for i in range(len(finger_indexes))]
+
         return finger_indexes
 
 
