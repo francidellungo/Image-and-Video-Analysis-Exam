@@ -49,7 +49,7 @@ def rotateHand(shape, contour, angle, centre_of_mass, fingers_indexes, valley_in
 	# print(np.array(list(valley_indexes)))
 	print(np.array(list(fingers_indexes)).astype(int))
 
-	return hand_mask_rotated, [ contour_rotated[i] for i in fingers_indexes], [ contour_rotated[i] for i in valley_indexes], np.array(contour_rotated)
+	return hand_mask_rotated, [ contour_rotated[i] for i in fingers_indexes], [ contour_rotated[i] for i in valley_indexes], np.array(contour_rotated), np.add(centre_of_mass, (0, 50))
 
 
 def getShape(contour, w_bias, h_bias):

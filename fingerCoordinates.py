@@ -71,7 +71,7 @@ def findFingerIndexesSimple(lenght, all_fingers_indexes):
                                 c = int((a + (lenght - b))/2 )
                 else:
                         c = int((a+b)/2)
-                finger_indexes.append(c)
+                finger_indexes.append(c%lenght)
         
         finger_indexes.append(all_fingers_indexes.pop())
 
@@ -137,6 +137,8 @@ def getFingerCoordinates(cnt, img_binary):
         # find one representative point for each fingertips (if a fingertips had two points the final point is calculated as the middlepoint)
         fingers_indexes = findFingerIndexesSimple(len(cnt), all_fingers_indexes)
 
+        print('contour: ',len(cnt))
+        print('fin_idx: ',fingers_indexes)
         finger_points = cnt[fingers_indexes]
 
         return finger_points, valley_points, fingers_indexes, valley_indexes

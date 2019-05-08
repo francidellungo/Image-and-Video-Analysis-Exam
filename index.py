@@ -9,6 +9,9 @@ path_in = './dataset_images/'
 path_out = './a_masks/'
 path_rot = './a_rotates/'
 path_pts = './a_points/'
+path_ell = './a_ellipses/'
+
+# path_clo_out = './closed/'
 
 paths = os.listdir(path_in)
 
@@ -30,23 +33,28 @@ colours = [
 def main():
 
         for name_img in paths:
-                # name_img = '035_3.JPG'
+                # name_img = '022_4.JPG'
                 print('\n \n ---> ' ,name_img)
-
+                
+                t0 = time.time()
                 # read image in a grey scale way
-                img_grey = cv2.imread(path_in + name_img, cv2.IMREAD_GRAYSCALE)
+                img_bgr = cv2.imread(path_in + name_img)
+                t1 = time.time()
+                print("imread: ", t1-t0)
 
                 # apply the preprocessing to the grey scale image
-                # hand_mask, contour, center_of_mass , ellipse_mask = getHand(img_grey)
-                hand_mask, contour, center_of_mass, _  = getHand( img_grey )
+                # hand_mask, contour, center_of_mass, _  = getHand( img_grey )
+                hand_mask, contour, center_of_mass, ellipse  = getHand( img_bgr )
+                print("getHand: ")
 
                 # save image in output path    
                 cv2.imwrite(path_out + name_img, hand_mask)
+                # cv2.imwrite(path_ell + name_img, ellipse)
 
                 # returns orinated points starting from little finger(0)
                 finger_points, valley_points, fingers_indexes, valley_indexes = getFingerCoordinates(contour, hand_mask)
 
-                hand_mask_rotated, finger_points, valley_points, contour = rotateHand(hand_mask.shape, contour, getAngle(finger_points[2],[list(center_of_mass)]), center_of_mass, fingers_indexes, valley_indexes)
+                hand_mask_rotated, finger_points, valley_points, contour, center_of_mass = rotateHand(hand_mask.shape, contour, getAngle(finger_points[2],[list(center_of_mass)]), center_of_mass, fingers_indexes, valley_indexes)
 
                 # save image in output path    
                 cv2.imwrite(path_rot + name_img, hand_mask_rotated)
@@ -62,7 +70,7 @@ def main():
                 r_based_contour, r_based_valley_indexes, r_based_fingers_indexes = updateContour(contour, valley_indexes, fingers_indexes, r_index)
 
                 # draw center of mass to image
-                img_points_hand = draw(img_points_hand, [], _, [[center_of_mass]], [255,0,0], _)
+                img_points_hand = draw(img_points_hand, [], _, [[center_of_mass]], [0,0,255], _)
 
                 # valley_indexes has 5 points updating after complementary search
                 medium_points, valley_indexes, comp_valley_indexes = calculateMediumPoints(r_based_contour, r_based_valley_indexes, r_based_fingers_indexes)
