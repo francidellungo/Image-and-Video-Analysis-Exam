@@ -4,6 +4,7 @@ a_masks
 a_rotates
 a_points
 new_images
+pickles
 
 # Python files
 __pycache__

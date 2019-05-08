@@ -14,7 +14,7 @@ def calculateScores(scores, cod, measure):
     
     genuine_scores_list = calculateGenuineDistances(scores, cod, measure)
     centroids_indexes = calculateGenuineCentroids(genuine_scores_list)
-    imposter_scores_list = calculateImposterDistances(np.array([ genuine_scores_list[centroids_indexes[i]][i] for i in range(len(genuine_scores_list[0]))]), cod, measure )
+    imposter_scores_list = calculateImposterDistances(np.array([ scores[centroids_indexes[i]][i] for i in range(len(scores[0]))]), cod, measure )
 
 
     # y_geom_genuine_predicted = [ [] for x in range(n_people) ]
@@ -36,10 +36,11 @@ def calculateGenuineDistances(scores, cod, measure):
     genuine_scores_list = []
 
     n_people = len(scores[0])
-    
+    print('people:', n_people)
+
     if cod == 0:
         for i in range(n_people):
-            genuine_scores_list.append( pairwise_distances(tuple(scores[:,i] ), metric=measure ) )
+            genuine_scores_list.append( pairwise_distances(scores[:,i] , metric=measure ) )
 
     else:
         for i in range(n_people):
@@ -62,16 +63,13 @@ def calculateGenuineDistances(scores, cod, measure):
     return genuine_scores_list
     
 
-# def calculateDistanceSingleVersion(n_people, n_imgs, scores, distance_measure):
-
-
 
 def calculateImposterDistances(scores, cod, measure ):
     ### calculate distances between one hand of each person ( imposter scores ) ###
     imposter_scores_list = []
 
     if cod == 0:
-        imposter_scores_list.append(pairwise_distances(tuple(scores), metric=measure ) )
+        imposter_scores_list.append(pairwise_distances(scores, metric=measure ) )
     else:
         imposter_scores_list.append( pairwise.chi2_kernel( scores ) )
 
@@ -83,6 +81,7 @@ def calculateGenuineCentroids(genuine_scores_list):
     indexes = []
     for matrix in genuine_scores_list:
         indexes.append(np.argmin( np.matrix(matrix).mean(1) ) )
+    print('len idexes:', len(indexes))
 
     return indexes
 
