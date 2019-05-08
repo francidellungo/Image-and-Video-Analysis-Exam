@@ -37,19 +37,20 @@ def otsu_grid(img_grey, grid):
     img_otsu = img_grey.copy()
     sublen = int(len(img_grey)/grid)
     sublon = int(len(img_grey[0])/grid)
-    
+
     for i in range(grid):
         for j in range(grid):
             # threshold and image of one single cell
             th, im = cv2.threshold(np.array([ np.array(row[j*int(len(img_grey[0])/grid):(j+1)*int(len(img_grey[0])/grid)]) for row in img_grey[i*int(len(img_grey)/grid):(i+1)*int(len(img_grey)/grid)]]), 127, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
             
-            print(type(im))
+            # print(type(im))
 
             # unify image cell in one unique image, cell by cell
             
             # for k in range(len(im)):
             #     for y in range(len(im[0])):
             #         img_otsu[i*int(len(img_grey)/grid)+k][j*int(len(img_grey[0])/grid)+y] = im[k][y]
+
             img_otsu[np.ix_(range(i*sublen, (i+1)*sublen), range(j*sublon, (j+1)*sublon))] = im
 
     return img_otsu

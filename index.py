@@ -4,6 +4,10 @@ from fingerFeaturePoints import *
 from extractionShapeFeatures import *
 from Utils import *
 from geometricalFeaturesExtraction import *
+from ComputeScores import *
+from tempfile import TemporaryFile
+
+outfile = TemporaryFile()
 
 path_in = './dataset_images/'
 path_out = './a_masks/'
@@ -30,17 +34,34 @@ colours = [
 ]
 
 
-def main():
+measures = [
+            ( 0    ,   'l1'        ),
+            ( 0  ,   'euclidean'    ),
+            ( 0   ,   'cosine' ),
+            ( 1  ,   'chi-square'      )	
+]
+
+
+def saveFile(w, h):
+
+        # matrices with scores for all people and all imgs ( features_scores[person][img] )
+
+        geom_scores = [[0 for x in range(w)] for y in range(h)]
+        distance_scores = [[0 for x in range(w)] for y in range(h)]
+        orientation_scores = [[0 for x in range(w)] for y in range(h)]
+        
+        print('n pers:', len(geom_scores), 'n images: ', len(geom_scores[0]))
 
         for name_img in paths:
                 # name_img = '022_4.JPG'
                 print('\n \n ---> ' ,name_img)
+                new_name_img = name_img.replace('.JPG', '')
+                person_idx, img_idx = new_name_img.split("_")[:]
                 
-                t0 = time.time()
+                print(person_idx, img_idx)
+                
                 # read image in a grey scale way
                 img_bgr = cv2.imread(path_in + name_img)
-                t1 = time.time()
-                print("imread: ", t1-t0)
 
                 # apply the preprocessing to the grey scale image
                 # hand_mask, contour, center_of_mass, _  = getHand( img_grey )
@@ -101,7 +122,68 @@ def main():
                 distance_features, orientation_features = extractShapeFeatures(updated_contour, r_point)
                 print("n dist, orient features: ",len(distance_features), len(orientation_features))
 
+                geom_scores[int(img_idx)-1][int(person_idx)-1] = geom_features
+                distance_scores[int(img_idx)-1][int(person_idx)-1] = distance_features
+                orientation_scores[int(img_idx)-1][int(person_idx)-1] = orientation_features
 
+
+        geom_scores = np.array(geom_scores)
+        distance_scores = np.array(distance_scores)
+        orientation_scores = np.array(orientation_scores)
+
+        np.save('./pickles/geom', geom_scores)
+        np.save('./pickles/distance', distance_scores)
+        np.save('./pickles/orientation', orientation_scores)
+
+def main():
+
+        genuine_scores = []
+        imposter_scores = []
+
+        n_imgs = 5
+        n_people = int( len([name for name in paths])/5 )
+        print('persone: ',n_people)
+
+        h, w = n_imgs, n_people
+
+        saveFile(w, h)
+
+        geom_scores = np.load('./pickles/geom.npy')
+        # distance_scores = np.load('./pickles/distance.npy')
+        # orientation_scores = np.load('./pickles/orientation.npy')
+
+        genuine_scores_list, imposter_scores_list, centroids_indexes = [], [], []
+        for cod, measure in measures:
+                print(measure)
+                genuine_scores_list_, imposter_scores_list_, centroids_indexes_ = calculateScores(geom_scores, cod, measure)
+                genuine_scores_list.append(genuine_scores_list_)
+                imposter_scores_list.append(imposter_scores_list_)
+                centroids_indexes.append(centroids_indexes_)
+        # print(geom_scores)
+
+        # geom_Euclid_dist_new, geom_L1_dist_new, y_geom_genuine_predicted = calculateScores(n_people, n_imgs, geom_scores, distance_scores, orientation_scores)
+
+        # print(len(geom_Euclid_dist_new), geom_Euclid_dist_new)
+
+        # print(len(geom_L1_dist_new), geom_L1_dist_new)
+
+
+        # for person in range(n_people):
+        #         print('person : ', person)
+        #         unos = [ 1 for i in range(len(y_geom_genuine_predicted[person]))]
+        #         TP, FP, TN, FN = performanceMeasure(unos, y_geom_genuine_predicted[person])
+        #         print(TP, FP, TN, FN)
+        print('genuine_scores_list')
+        print(len(genuine_scores_list), len(genuine_scores_list[0]), len(genuine_scores_list[0][0]) )
+        print(genuine_scores_list[1])
+        print( 'imposter_scores_list')
+        print(len(imposter_scores_list), len(imposter_scores_list[0]))
+        print( imposter_scores_list[1])
+        print('centroids_indexes' )
+        print(centroids_indexes[1])
+        
 
 if __name__== "__main__":
   main()
+
+

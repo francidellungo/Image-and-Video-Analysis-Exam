@@ -2,6 +2,8 @@ import numpy as np
 import math
 from pywt import wavedec #, families
 
+mu = 10**(-10)
+
 W = [
     +20, # j = 0 little finger
     +10, # j = 1 ring finger
@@ -48,7 +50,7 @@ def getAngle(p, m):
     m = m[0]
     p = p[0]
     # print(m, p)
-    phi = np.rad2deg(np.arctan((m[1]-p[1])/(m[0]-p[0])))
+    phi = np.rad2deg(np.arctan((m[1]-p[1])/(m[0]-p[0] + mu)))
     return phi
 
 
@@ -127,7 +129,7 @@ def allignFinger(cnt, m, idx, phi, c_idx, v_idx):
 
 
     # changing original contour points with the new found
-    print(len(cnt[ c_idx : v_idx ]), len(cnt[ c_smooth_index : v_smooth_index ]), len(new_points[n_smooth_el: len(cnt[ c_idx : v_idx ])-n_smooth_el]))
+    # print(len(cnt[ c_idx : v_idx ]), len(cnt[ c_smooth_index : v_smooth_index ]), len(new_points[n_smooth_el: len(cnt[ c_idx : v_idx ])-n_smooth_el]))
     
     if not broken:
         cnt[ c_smooth_index : v_smooth_index ] = new_points[n_smooth_el: len(cnt[ c_idx : v_idx ])-n_smooth_el]

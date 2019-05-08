@@ -3,12 +3,9 @@ pdf
 a_masks
 a_rotates
 a_points
-eroded
-closed
 a_ellipses
-a_masks.1
-new_images
-images
+# pickles
+
 
 # Video keeping
 *xml
