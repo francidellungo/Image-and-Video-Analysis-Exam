@@ -1,10 +1,14 @@
 # OUR stuff folders
-pdf
-a_masks
-a_rotates
-a_points
-a_ellipses
-# pickles
+
+# hands
+#     masks
+#     rotates
+#     points
+#     ellipses
+# /pickles
+# !pickles/scores
+# figures
+
 
 
 # Video keeping
