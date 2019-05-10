@@ -21,7 +21,7 @@ def draw(img, contour, cnt_color, point_lists, point_list_colors = [255,255,255]
 		font = cv2.FONT_HERSHEY_SIMPLEX
 		for i, point in enumerate(point_lists):
 			xy = tuple([ int(x) for x in point[0] ])
-			cv2.putText(img, str(i), xy, font, 2, text_colors ,2,cv2.LINE_AA)
+			cv2.putText(img, str(i), xy, font, 1, text_colors ,2,cv2.LINE_AA)
 	
 	return img
 
@@ -47,7 +47,7 @@ def rotateHand(shape, contour, angle, centre_of_mass, fingers_indexes, valley_in
 	cv2.fillPoly(hand_mask_rotated, pts = np.array([contour_rotated], dtype=np.int32), color=(255))
 	# print(list(fingers_indexes))
 	# print(np.array(list(valley_indexes)))
-	print(np.array(list(fingers_indexes)).astype(int))
+	# print(np.array(list(fingers_indexes)).astype(int))
 
 	return hand_mask_rotated, [ contour_rotated[i] for i in fingers_indexes], [ contour_rotated[i] for i in valley_indexes], np.array(contour_rotated), np.add(centre_of_mass, (0, 50))
 

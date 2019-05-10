@@ -97,15 +97,15 @@ def allignFinger(cnt, m, idx, phi, c_idx, v_idx):
     # number of elements whose new coordinates are calculated as an average mean between old points and new one
     n_smooth_el = int(((v_idx-c_idx+len(cnt))%len(cnt))/6)
     
-    print('c_idx, v_idx:', c_idx, v_idx)
+    # print('c_idx, v_idx:', c_idx, v_idx)
     c_smooth_index = (c_idx + n_smooth_el)
     v_smooth_index = v_idx - n_smooth_el
 
     # mooving all points between c_idx and v_idx on angle psi
     new_points = [ [[ m[0] + (point[0][0]-m[0])*np.cos(psi) - (point[0][1]-m[1])*np.sin(psi) , m[1] + (point[0][0]-m[0])*np.sin(psi) + (point[0][1]-m[1]) * np.cos(psi)]] for point in cnt[ c_idx : v_idx ] ]
     
-    print(len(cnt))
-    print(n_smooth_el)
+    # print(len(cnt))
+    # print(n_smooth_el)
     broken = False
     
     for i in range(n_smooth_el):
@@ -197,12 +197,13 @@ def distanceMap(cnt, r_idx):
         - dp: 
             distance map of each points in clockwise orientation
     """
+    # print('distanceMap: ', r_idx)
 
     dp = []
     for point in cnt:
         # point = cnt[i] # cnt[(r_idx + i)%len(cnt)]
         # print(cnt[r_idx][0][0][0], point[0])
-        d_value = math.sqrt((cnt[r_idx][0][0][0][1] - point[0][1])**2 + (cnt[r_idx][0][0][0][0] - point[0][0])**2)  
+        d_value = math.sqrt((cnt[r_idx][0][1] - point[0][1])**2 + (cnt[r_idx][0][0] - point[0][0])**2)  
         dp.append(d_value)
 
     return dp
@@ -230,7 +231,7 @@ def orientationMap(cnt, r_idx):
     op = []
     for i in range(len(cnt)):
         point = cnt[(r_idx + i)%len(cnt)]
-        o_value = 90 + np.arctan((cnt[r_idx][0][0][0][1] - point[0][0][0][1])/(cnt[r_idx][0][0][0][0] - point[0][0][0][0] + sigma))
+        o_value = 90 + np.arctan((cnt[r_idx][0][1] - point[0][1])/(cnt[r_idx][0][0] - point[0][0] + sigma))
         op.append(o_value)
 
     return op
@@ -283,4 +284,4 @@ def extractShapeFeatures(cnt, r_idx):
     distance_features = distance_coeffs[0][:50]
     orientation_features = orientation_coeffs[0][:50]
 
-    return distance_features, orientation_features
+    return distance_features, orientation_features, dp, op

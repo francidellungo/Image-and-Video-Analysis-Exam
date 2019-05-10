@@ -7,24 +7,27 @@ from geometricalFeaturesExtraction import *
 from ComputeScores import *
 import matplotlib.pyplot as plt
 import copy
-import csv
+import json
 
-path_in = './dataset_images/'
+hand_base = './hands/'
+path_in = 'dataset/'
+path_out = 'masks/'
+path_rot = 'rotates/'
+path_pts = 'points/'
+path_ell = 'ellipses/'
 
-path_out = './hands/masks/'
-path_rot = './hands/rotates/'
-path_pts = './hands/points/'
-path_ell = './hands/ellipses/'
-
-thresholds = './pickles/'
-
-scores_path = './pickles/scores/'
-params_path = './pickles/params/'
-norms_path = './pickles/norms/'
-row_path = './pickles/rows/'
+pickle_base = './pickles/'
+scores_path = 'scores/'
+params_path = 'params/'
+norms_path = 'norms/'
+row_path = 'rows/'
+dist_path = 'dist_map/'
+thresholds = pickle_base
 
 path_figs = './figures/'
 path_test = './tests/'
+hand_path = 'hands/'
+pickle_path = 'pickles/'
 
 # paths = os.listdir(path_in)
 
@@ -51,9 +54,13 @@ measures = [
 ]
 
 
-def saveScores(w, h, path_in, scores_path):
+def saveScores(w, h, path_in, hand_base, scores_path):
 
         paths = os.listdir(path_in)
+
+        paths.sort()
+
+        print(paths)
 
         # matrices with scores for all people and all imgs ( features_scores[person][img] )
 
@@ -61,9 +68,11 @@ def saveScores(w, h, path_in, scores_path):
         distance_scores = [[0 for x in range(w)] for y in range(h)]
         orientation_scores = [[0 for x in range(w)] for y in range(h)]
         
-        print('n pers:', h, 'n images: ', w)
+        # print('\n\n n pers:', h, 'n images: ', w)
 
-        for name_img in paths:
+        for i, name_img in enumerate(paths):
+                _ = None
+                
                 # name_img = '022_4.JPG'
                 print('\n \n ---> ' ,name_img)
                 new_name_img = name_img.replace('.JPG', '')
@@ -77,29 +86,35 @@ def saveScores(w, h, path_in, scores_path):
                 # apply the preprocessing to the grey scale image
                 # hand_mask, contour, center_of_mass, _  = getHand( img_grey )
                 hand_mask, contour, center_of_mass, ellipse  = getHand( img_bgr )
-                print("getHand: ")
+                # print("getHand: ")
 
                 # save image in output path    
-                cv2.imwrite(path_out + name_img, hand_mask)
-                cv2.imwrite(path_ell + name_img, ellipse)
+                cv2.imwrite(hand_base + path_out + name_img, hand_mask)
+                # cv2.imwrite(hand_base + path_ell + name_img, ellipse)
+                
+                """ img_points_hand = cv2.imread('./hands/rotates/001_1.JPG')
+                img_points_hand = draw(_, contour, (0, 255, 0), [], [255,0,0], _)
+                img_points_hand = draw(img_points_hand, [], _, [[center_of_mass]], [0,0,255], _)
+                img_points_hand = draw(img_points_hand, [], _, [[[321, 38]]], [0,0,255], _)
+                cv2.imwrite(hand_base + path_ell + name_img, img_points_hand) """
 
-                # returns orinated points starting from little finger(0)
+                # returns ordinated points starting from little finger(0)
                 finger_points, valley_points, fingers_indexes, valley_indexes = getFingerCoordinates(contour, hand_mask)
 
+                # rotate based on middle finger point to center of mass axes
                 hand_mask_rotated, finger_points, valley_points, contour, center_of_mass = rotateHand(hand_mask.shape, contour, getAngle(finger_points[2],[list(center_of_mass)]), center_of_mass, fingers_indexes, valley_indexes)
 
                 # save image in output path    
-                cv2.imwrite(path_rot + name_img, hand_mask_rotated)
+                cv2.imwrite(hand_base + path_rot + name_img, hand_mask_rotated)
 
-                _ = None
-
+                
                 # draw contour and finger points to image
                 img_points_hand = draw(_, contour, (0, 255, 0), finger_points, [255,0,0], _)
 
-                r_point, r_index = getReferencePoint(contour, fingers_indexes, center_of_mass)
+                r_point_normal, r_index = getReferencePoint(contour, fingers_indexes, center_of_mass)
 
-                print('update contour')
-                r_based_contour, r_based_valley_indexes, r_based_fingers_indexes = updateContour(contour, valley_indexes, fingers_indexes, r_index)
+                # print('update contour')
+                r_point, r_based_contour, r_based_valley_indexes, r_based_fingers_indexes = updateContour(contour, valley_indexes, fingers_indexes, r_index)
 
                 # draw center of mass to image
                 img_points_hand = draw(img_points_hand, [], _, [[center_of_mass]], [0,0,255], _)
@@ -108,13 +123,13 @@ def saveScores(w, h, path_in, scores_path):
                 medium_points, valley_indexes, comp_valley_indexes = calculateMediumPoints(r_based_contour, r_based_valley_indexes, r_based_fingers_indexes)
 
                 # draw medium to image
-                print('medium')
+                # print('medium')
                 img_points_hand = draw(img_points_hand, [], _, medium_points, [255,255,255], _)
                 # draw valley to image
-                print('valley')
+                # print('valley')
                 img_points_hand = draw(img_points_hand, [], _, r_based_contour[valley_indexes], [0,0,255], _)
                 # draw complementary valley to image
-                print('complementary valley')
+                # print('complementary valley')
                 img_points_hand = draw(img_points_hand, [], _, r_based_contour[comp_valley_indexes], [0,255,255], _)
 
                 updated_contour = fingerRegistration(r_based_contour, center_of_mass, r_based_contour[r_based_fingers_indexes], medium_points, comp_valley_indexes, valley_indexes)
@@ -122,31 +137,42 @@ def saveScores(w, h, path_in, scores_path):
                 # draw new contour to image
                 img_points_hand = draw(img_points_hand, updated_contour, (255, 255, 255), [], _, _)
 
-                cv2.imwrite(path_pts + name_img, img_points_hand)
+                cv2.imwrite(hand_base + path_pts + name_img, img_points_hand)
 
                 # to extract geometrical features we used non rotated fingers 
                 _, geom_features = extractGeometricalFeatures(r_based_contour[r_based_fingers_indexes], medium_points)
 
-                print("n geom features: ",len(geom_features))
+                # print("n geom features: ",len(geom_features))
                 
                 # to extract shape features updated contours are used
-                distance_features, orientation_features = extractShapeFeatures(updated_contour, r_point)
-                print("n dist, orient features: ",len(distance_features), len(orientation_features))
+                # print(r_point)
 
-                geom_scores[int(img_idx)-1][int(person_idx)-1] = geom_features
-                distance_scores[int(img_idx)-1][int(person_idx)-1] = distance_features
-                orientation_scores[int(img_idx)-1][int(person_idx)-1] = orientation_features
+                distance_features, orientation_features, dm_u, om_u  = extractShapeFeatures(updated_contour, 0)
+                # print("n dist, orient features: ",len(distance_features), len(orientation_features))
+
+                plt.plot(range(len(updated_contour)), dm_u, 'b--', label="distance map")
+                # print(r_based_fingers_indexes, dm)
+                plt.scatter(r_based_fingers_indexes, [ dm_u[idx] for idx in r_based_fingers_indexes], c='r', label='finger points')
+                plt.scatter(valley_indexes, [ dm_u[idx] for idx in valley_indexes], c='g', label='valley points')
+                plt.scatter(comp_valley_indexes, [ dm_u[idx] for idx in comp_valley_indexes] , c='y', label='valley points')
+                plt.savefig(hand_base + dist_path + new_name_img + 'update.png')
+                plt.close()
+
+
+                geom_scores[i % h][int(i / h)] = geom_features
+                distance_scores[i % h][int(i / h)] = distance_features
+                orientation_scores[i % h][int(i / h)] = orientation_features
 
         geom_scores = np.array(geom_scores)
         distance_scores = np.array(distance_scores)
         orientation_scores = np.array(orientation_scores)
 
-        np.save(scores_path + 'geom', geom_scores)
-        np.save(scores_path + 'distance', distance_scores)
-        np.save(scores_path + 'orientation', orientation_scores)
+        np.save( scores_path + 'geom', geom_scores)
+        np.save( scores_path + 'distance', distance_scores)
+        np.save( scores_path + 'orientation', orientation_scores)
 
 
-def saveMatrix(scores, measures, norms_path, row_path):
+def saveMatrix(scores, measures, pickle_base, norms_path, row_path):
 
         for cod, (measure, mea) in measures:
 
@@ -154,13 +180,14 @@ def saveMatrix(scores, measures, norms_path, row_path):
                 
                         row_scores, matrix_distances, centroids_indexes = allScores(score, cod, measure)
 
-                        matrix_distances_norm = matrixNormalization(matrix_distances)
+                        matrix_distances_norm, mini, maxi = matrixNormalization(matrix_distances)
 
-                        np.save(norms_path + file_name + '_' + mea, (centroids_indexes, matrix_distances_norm))
-                        np.save(row_path + file_name + '_' + mea, (centroids_indexes, row_scores))
+                        np.save(pickle_base + norms_path + file_name + '_' + mea, (centroids_indexes, matrix_distances_norm))
+                        np.save(pickle_base + row_path + file_name + '_' + mea, (centroids_indexes, row_scores))
+                        np.save(pickle_base + 'mini_maxi/' + file_name + '_' + mea, (mini, maxi))
 
 
-def saveParams(scores, measures, num_imgs, params_path, norms_path):
+def saveParams(scores, measures, num_imgs, pickle_base, params_path, norms_path):
 
         for cod, (measure, mea) in measures:
 
@@ -168,13 +195,13 @@ def saveParams(scores, measures, num_imgs, params_path, norms_path):
 
                 for l, file_name in scores:
                         # 
-                        centroids_indexes, matrix_distances_norm = np.load( norms_path + file_name + '_' + mea + '.npy' )
+                        centroids_indexes, matrix_distances_norm = np.load( pickle_base + norms_path + file_name + '_' + mea + '.npy' )
                         
                         performance_params = threshPerformanceParams(matrix_distances_norm, num_imgs, centroids_indexes)
 
                         # matrixes.append(matrix_distances_norm)
 
-                        np.save(params_path + file_name + '_' + mea, performance_params)
+                        np.save(pickle_base + params_path + file_name + '_' + mea, performance_params)
                         
 
                 # fusion = fusionScores( matrixes, cod, measure )
@@ -182,44 +209,13 @@ def saveParams(scores, measures, num_imgs, params_path, norms_path):
                 # np.save(norms_path + file_name + '_' + mea, fusion)
                 
 
-        """ 
-        
-        x = np.arange(0, 1.0, 0.01)
-        y_FAR = performance_params[:,0]
-        y_FRR = performance_params[:,1]
-        y_TAR = performance_params[:,2]
-        y_DI  = performance_params[:,3]
-
-        idx_EER = np.argmin(np.abs(np.subtract(y_FAR, y_FRR)))
-        EER = (x[idx_EER], y_FAR[idx_EER]) 
-        
-        plt.plot(x, y_FAR, 'r', label='FAR')
-        plt.plot(x, y_FRR, 'b', label='FRR')
-        plt.scatter(EER[0], EER[1], c='g' , label='EER')
-        plt.xlabel('x')
-        plt.ylabel('y')
-        plt.title('FIG 12 (a)')
-        plt.legend()
-        plt.show()
-
-
-        plt.plot(y_FAR, y_TAR, 'r', label=l)
-        plt.xlabel('FAR')
-        plt.ylabel('TAR')
-        plt.title('ROC'+' '+measure)
-        plt.legend()
-        plt.show()
-        
-        """
-        
-
-def fusionScores(measures, num_imgs, norms_path):
+def fusionScores(measures, num_imgs, pickle_base, norms_path):
 
         for cod, (measure, mea) in measures:
-                print('done')
-                (_, g) = np.load( norms_path + 'geom_' + mea + '.npy' )               # g_centroids_indexes
-                (_, d) = np.load( norms_path + 'distance_' + mea + '.npy' )            # d_centroids_indexes
-                (_, o) = np.load( norms_path + 'orientation_' + mea + '.npy' )         # o_centroids_indexes
+                # print('done')
+                (_, g) = np.load( pickle_base + norms_path + 'geom_' + mea + '.npy' )               # g_centroids_indexes
+                (_, d) = np.load( pickle_base + norms_path + 'distance_' + mea + '.npy' )            # d_centroids_indexes
+                (_, o) = np.load( pickle_base + norms_path + 'orientation_' + mea + '.npy' )         # o_centroids_indexes
 
                 pd = np.multiply(d, o)
                 sm = np.add(d, o)
@@ -231,16 +227,19 @@ def fusionScores(measures, num_imgs, norms_path):
                 for s in range(0, Z.shape[0], num_imgs):
                         Z[np.ix_(range(s, s+num_imgs), range(s, s+num_imgs))] = G[np.ix_(range(s, s+num_imgs), range(s, s+num_imgs))]
 
-                Z = matrixNormalization(Z)
+                Z, mini, maxi = matrixNormalization(Z)
 
                 # print('normalized matrix: ', Z)
 
                 centroids_indexes = allIndexes( num_imgs, Z )
 
-                np.save(norms_path + 'fusion_' + mea, (centroids_indexes, Z))
+                np.save(pickle_base + norms_path + 'fusion_' + mea, (centroids_indexes, Z))
+                np.save(pickle_base + 'mini_maxi/' + 'fusion_' + mea, (mini, maxi))
 
 
-def saveFigures(scores_reduct_all, measures, params_path, path_figs, thresholds):
+
+
+def saveFigures(scores_reduct_all, measures, pickle_base, params_path, path_figs, thresholds):
 
         h = 100
         w = len(scores_reduct_all)
@@ -255,12 +254,13 @@ def saveFigures(scores_reduct_all, measures, params_path, path_figs, thresholds)
 
                 for j, (l, file_name )in enumerate(scores_reduct_all):
                         
-                        perf_matrix[np.ix_(range( i * h, (i+1) * h), range( j * w, (j+1) * w))] = np.load(params_path + file_name + '_' + mea +'.npy')
+                        perf_matrix[np.ix_(range( i * h, (i+1) * h), range( j * w, (j+1) * w))] = np.load(pickle_base + params_path + file_name + '_' + mea +'.npy')
 
                 # fig_12_a.append((measure, perf_matrix[i, -1]))
 
         
-        saveThreshFigure(h, w, [ measure for _, (measure, _) in measures], perf_matrix[np.ix_(range( h * w), range(- w, 0))], path_figs, thresholds)
+        for j, (_, title)  in enumerate(scores_reduct_all):
+                saveThreshFigure(h, w, measures, perf_matrix[np.ix_(range( h * w), range( j * w, (j+1) * w))], path_figs, title, thresholds)
         
         for j, (_, title)  in enumerate(scores_reduct_all):
                 saveROCScoreFigure(h, w, perf_matrix[np.ix_(range( h * w), range( j * w, (j+1) * w))], title, measures)
@@ -269,14 +269,14 @@ def saveFigures(scores_reduct_all, measures, params_path, path_figs, thresholds)
                 saveROCMeasureFigure(h, w, perf_matrix[np.ix_(range( i * h, (i+1) * h), range( w * w ))], measure, scores_reduct_all)
 
         
-def saveThreshFigure(h, w, measures, performance_params_list, path_figs, thresholds):
+def saveThreshFigure(h, w, measures, performance_params_list, path_figs, title, thresholds):
 
         x = np.arange(0, 1.0, 0.01)
 
         # print(len(performance_params_list))
-        EERs = []
+        EERs = dict()
 
-        for i, measure in enumerate(measures):
+        for i,  (_, (measure, mea))  in enumerate(measures):
                 performance_params = performance_params_list[np.ix_(range( i * h, h * (i+1)), range( w ))]
 
                 # print(len(performance_params))
@@ -289,7 +289,7 @@ def saveThreshFigure(h, w, measures, performance_params_list, path_figs, thresho
                 # print(idx_EER)
                 EER = (x[idx_EER], y_FAR[idx_EER])
 
-                EERs.append(EER) 
+                EERs[mea] = EER 
                 
                 plt.plot(x, y_FAR, 'r', label='FAR')
                 plt.plot(x, y_FRR, 'b', label='FRR')
@@ -301,10 +301,8 @@ def saveThreshFigure(h, w, measures, performance_params_list, path_figs, thresho
                 plt.savefig(path_figs + 'thresh_fusion_' + measure + '.png')
                 plt.close()
 
-        with open(thresholds + 'thresholds.txt', 'w') as f:
-                for EER, measure in zip(EERs, measures):
-                        f.write(measure + ': ' + str(EER) + '\n')
-
+        with open(thresholds + 'thresholds_' + title + '.json', 'w') as f:
+                json.dump(EERs, f)
 
 
 def saveROCScoreFigure(h, w, column_score, title, measures):
@@ -360,25 +358,119 @@ def saveROCMeasureFigure(h, w, row_score, measure, scores_reduct_all):
         plt.close()
 
 
-# def test(measures, path_test, norms_path, row_path):
-        
-#         tests = os.listdir(path_test)
+def countPeoplePhoto(path):
+        paths = os.listdir(path)
 
-#         # saveScores(n_people, n_imgs, path_test, path_test+'scores/')
+        d = dict()
 
-#         for test in tests:
-
-#                 for cod, (measure, mea) in measures:
+        for name_img in paths:
                 
-#                         (r_g, ci_g) = np.load( row_path + 'geom_' + mea + '.npy' )               # g_centroids_indexes
-#                         (r_d, ci_d) = np.load( row_path + 'distance_' + mea + '.npy' )            # d_centroids_indexes
-#                         (r_o, ci_o) = np.load( row_path + 'orientation_' + mea + '.npy' )         # o_centroids_indexes
+                new_name_img = name_img.replace('.JPG', '')
+                person_idx, img_idx = new_name_img.split("_")[:]
+                
+                if person_idx in d:
+                        d[person_idx].append(img_idx)
+                else:
+                        d[person_idx] = [ img_idx ]
+                
+        # print(d.values())
+
+        d1 = np.array([ len(elem) for elem in list(d.values())])
+        if d1.max() > d1.min():
+                print('people has different number of photos, check it!')
+                n_person, n_imgs = None, None
+        else:
+                # print('same number of photos')
+                n_person, n_imgs = len(d.values()), len(list(d.values())[0])
+        
+        return n_person, n_imgs
+
+
+def test(measures, path_test, hand_path, pickle_path , norms_path, row_path):
+        
+        tests = os.listdir(path_test)
+        tests.sort()
+
+        n_people = len(tests)
+
+        saveScores(n_people, 1, path_test, path_test + hand_path, path_test + pickle_path + scores_path)
+
+        EERs_g = dict()
+        EERs_f = dict()
+        EERs_d = dict()
+        EERs_o = dict()
+
+        with open(thresholds + 'thresholds_geom.json', 'r') as f:
+                EERs_g = json.load(f)
+
+        with open(thresholds + 'thresholds_fusion.json', 'r') as f:
+                EERs_f = json.load(f)
+
+        with open(thresholds + 'thresholds_distance.json', 'r') as f:
+                EERs_d = json.load(f)
+
+        with open(thresholds + 'thresholds_orientation.json', 'r') as f:
+                EERs_o = json.load(f)
+        
+        GG = np.load( path_test + pickle_path + scores_path + 'geom.npy' )                
+        DD = np.load( path_test + pickle_path + scores_path + 'distance.npy' )            
+        OO = np.load( path_test + pickle_path + scores_path + 'orientation.npy' )     
+
+        for i, name_img in enumerate(tests):
+
+                print('\n \n ---> ' ,name_img)
+                new_name_img = name_img.replace('.JPG', '')
+                person_idx, img_idx = new_name_img.split("_")[:]
+                print(person_idx, img_idx)
+
+                for cod, (measure, mea) in measures:
                         
-#                         # print(r_g)
-#                         # print(len(ci_g))
-#                         g_centroid = ci_g[np.ix_(r_g)]
-#                         d_centroid = ci_d[np.ix_(r_d)]
-#                         o_centroid = ci_o[np.ix_(r_o)]
+                        (r_g, ci_g)     = np.load( row_path + 'geom_' + mea + '.npy' )                # g_centroids_indexes
+                        (g_mn, g_mx)    = np.load(pickle_base + 'mini_maxi/' + 'geom_' + mea)
+
+                        (r_d, ci_d)     = np.load( row_path + 'distance_' + mea + '.npy' )            # d_centroids_indexes
+                        (d_mn, d_mx)    = np.load(pickle_base + 'mini_maxi/' + 'distance_' + mea)
+
+                        (r_o, ci_o)     = np.load( row_path + 'orientation_' + mea + '.npy' )         # o_centroids_indexes
+                        (o_mn, o_mx)    = np.load(pickle_base + 'mini_maxi/' + 'orientation_' + mea)
+
+                        (z_big_centroids_indexes, _) = np.load(pickle_base + norms_path + 'fusion_' + mea)
+                        (f_mn, f_mx)    = np.load(pickle_base + 'mini_maxi/' + 'fusion_' + mea)
+
+                        g, d, o = GG[i], DD[i], OO[i]
+
+                        # print(r_g)
+                        # print(len(ci_g))
+                        g_centroid = ci_g[np.ix_(r_g)]
+                        d_centroid = ci_d[np.ix_(r_d)]
+                        o_centroid = ci_o[np.ix_(r_o)]
+
+                        _, g_big_matrix, g_big_centroids_indexes = allScores(np.append( g_centroid, g ), cod, measure)
+                        g_norm = matrixNormalizationMiniMaxi(g_big_matrix, g_mn, g_mx)
+                        _, d_big_matrix, d_big_centroids_indexes = allScores(np.append( d_centroid, d ), cod, measure)
+                        d_norm = matrixNormalizationMiniMaxi(d_big_matrix, d_mn, d_mx)
+                        _, o_big_matrix, o_big_centroids_indexes = allScores(np.append( o_centroid, o ), cod, measure)
+                        o_norm = matrixNormalizationMiniMaxi(o_big_matrix, o_mn, o_mx)
+
+                        g_dist_norm = g_norm[-1]
+                        d_dist_norm = d_norm[-1]
+                        o_dist_norm = o_norm[-1]
+
+                        pd = np.multiply(d_dist_norm, o_dist_norm)
+                        f_dist = np.minimum(pd, g_dist_norm)
+                        f_dist_norm = matrixNormalizationMiniMaxi(f_dist, f_mn, f_mx)
+                        
+                        g_maybe = [ x for x, y in enumerate(np.array( g_dist_norm[ np.ix_(0, g_big_centroids_indexes) ] ) ) if y < EERs_g[mea]]
+                        d_maybe = [ x for x, y in enumerate(np.array( d_dist_norm[ np.ix_(0, d_big_centroids_indexes) ] ) ) if y < EERs_d[mea]]
+                        o_maybe = [ x for x, y in enumerate(np.array( o_dist_norm[ np.ix_(0, o_big_centroids_indexes) ] ) ) if y < EERs_o[mea]]
+                        f_maybe = [ x for x, y in enumerate(np.array( f_dist_norm[ np.ix_(0, z_big_centroids_indexes) ] ) ) if y < EERs_f[mea]]
+
+                        print('geom is similar images n: ', g_maybe, ' for measure ', mea)
+                        print('dMap is similar images n: ', d_maybe, ' for measure ', mea)
+                        print('oMap is similar images n: ', o_maybe, ' for measure ', mea)
+                        print('fusi is similar images n: ', f_maybe, ' for measure ', mea)
+
+
 
                         
 
@@ -389,17 +481,15 @@ def saveROCMeasureFigure(h, w, row_score, measure, scores_reduct_all):
 
 def main():
         
-        paths = os.listdir(path_in)
-        
-        n_imgs = 5
-        n_people = int( len([name for name in paths])/5 )
-        print('persone: ',n_people)
+        paths = os.listdir(hand_base + path_in)
 
-        saveScores(n_people, n_imgs, path_in, scores_path)
+        n_people, _ = countPeoplePhoto(hand_base + path_in)
 
-        g_scores = np.load(scores_path + 'geom.npy')
-        d_scores = np.load(scores_path + 'distance.npy')
-        o_scores = np.load(scores_path + 'orientation.npy')
+        saveScores(n_people, 5, hand_base + path_in, hand_base, pickle_base + scores_path)
+
+        g_scores = np.load(pickle_base + scores_path + 'geom.npy')
+        d_scores = np.load(pickle_base + scores_path + 'distance.npy')
+        o_scores = np.load(pickle_base + scores_path + 'orientation.npy')
 
         num_imgs = g_scores.shape[0]
         
@@ -409,7 +499,7 @@ def main():
                 ( o_scores, ('o', 'orientation'))  
         ]
 
-        saveMatrix(scores, measures, norms_path, row_path)
+        saveMatrix(scores, measures, pickle_base, norms_path, row_path)
 
         scores_reduct_all = [
                 ( 'g', 'geom'       ),
@@ -418,13 +508,13 @@ def main():
                 ( 'f', 'fusion'     )
         ]
 
-        fusionScores(measures, num_imgs, norms_path)
+        fusionScores(measures, num_imgs, pickle_base, norms_path)
 
-        saveParams(scores_reduct_all, measures, num_imgs, params_path, norms_path)
+        saveParams(scores_reduct_all, measures, num_imgs, pickle_base, params_path, norms_path)
 
-        saveFigures(scores_reduct_all, measures, params_path, path_figs, thresholds)
+        saveFigures(scores_reduct_all, measures, pickle_base,  params_path, path_figs, thresholds)
 
-        # test(measures, path_test, norms_path, row_path )
+        # test(measures, path_test, hand_path, pickle_path, norms_path, pickle_base + row_path )
         
         
 

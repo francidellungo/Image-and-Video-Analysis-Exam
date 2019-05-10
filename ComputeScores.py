@@ -44,6 +44,13 @@ def matrixNormalization(matrix):
 
     # print( matrix )
 
+    return matrix, mini, maxi
+
+
+def matrixNormalizationMiniMaxi(matrix, mini, maxi):
+
+    matrix = (matrix - mini) / (maxi - mini)
+
     return matrix
 
 
@@ -220,7 +227,7 @@ def calculateGenuineDistances(scores, cod, measure):
     genuine_scores_list = []
 
     n_people = len(scores[0])
-    print('people:', n_people)
+    # print('people:', n_people)
 
     if cod == 0:
         for i in range(n_people):

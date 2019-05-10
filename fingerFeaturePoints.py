@@ -20,11 +20,16 @@ def getReferencePoint(contour, fingers_indexes, center_of_mass):
 
     center_of_mass = np.asarray(center_of_mass)
 
-    d_point_rect = [ np.abs(norm(np.cross(middle_point-center_of_mass, center_of_mass-p))/norm(middle_point-center_of_mass)) for p in semi_contour ]
+    # point to rect distance between middle point - centroid rect and all points of semi contour
+    d_point_rect = [ np.abs(norm(np.cross(middle_point - center_of_mass, center_of_mass - p))/norm(middle_point - center_of_mass)) for p in semi_contour ]
 
+    # get index of point in semicontour that has minimal point to middle point - centroid rect
     r_partial_index = np.argmin(d_point_rect)
 
+    # adjust index of r_point adding 0 finger index ( semi-contour index )
     r_index = fingers_indexes[0] + r_partial_index
+
+    # return point and index
     r_point = contour[r_index]
 
     return r_point, r_index
@@ -77,13 +82,16 @@ def calculateMediumPoints(contour, valley_indexes, fingers_indexes):
     
 
 def updateContour(contour, valley_indexes, fingers_indexes, r_index):
+
     length = len(contour)
 
-    updated_contour = np.concatenate((contour[r_index::],contour[:r_index:]))
+    updated_contour = np.concatenate((contour[r_index::], contour[:r_index:]))
+
+    # print('ATTENZIONE: ', updated_contour , contour)
 
     # print(len(contour), len(updated_contour))
     
     valley_indexes  = [ (index + length - r_index)%length  for index in valley_indexes]
     fingers_indexes = [ (index + length - r_index)%length  for index in fingers_indexes]
 
-    return updated_contour, valley_indexes, fingers_indexes
+    return updated_contour[0], updated_contour, valley_indexes, fingers_indexes

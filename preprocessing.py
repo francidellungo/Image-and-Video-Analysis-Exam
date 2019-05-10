@@ -173,6 +173,49 @@ def getOneHandContour(img_binary):
     # find contours of processed image
     contours_bin, hierarchy_bin = cv2.findContours(img_binary, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
 
+    # # create hull array for convex hull points
+    # hull = []
+    
+    # # calculate points for each contour
+    # for i in range(len(contours_bin)):
+    #     # creating convex hull object for each contour
+    #     hull.append(cv2.convexHull(contours_bin[i], clockwise=True))
+
+    # # create an empty black image
+    # drawing = np.zeros((1200, 1600, 3), np.uint8)
+    # font = cv2.FONT_HERSHEY_SIMPLEX
+    # # draw contours and hull points
+    # for i in range(len(contours_bin)):
+    #         color_contours = (0, 255, 0) # green - color for contours
+    #         color = (255, 0, 0) # blue - color for convex hull
+    #         # draw ith contour
+    #         cv2.drawContours(drawing, contours_bin, i, color_contours, 1, 8, hierarchy_bin)
+    #         # draw ith convex hull object
+    #         cv2.drawContours(drawing, hull, i, color, 1, 8)
+    #         defects = cv2.convexityDefects(contours_bin[i], hull[i])
+    #         for j, (point1, point2) in enumerate(zip(hull[i][0::2], hull[i][1::2])):
+    #             print(point1, point2)
+    #             point1, point2 = point1[0], point2[0]
+    #             print(point1, point2)
+    #             x = int((point1[0] + point2[0] ) / 2)
+    #             y = int((point1[1] + point2[1] ) / 2)
+    #             print(x, y)
+    #             cv2.putText(drawing, str(j), (x, y), font, 0.5,(255,0,0),2,cv2.LINE_AA)
+
+    # defects = cv2.convexityDefects(contours_bin,cv2.convexHull(contours_bin[0], clockwise=True))
+
+    # for i in range(defects.shape[0]):
+    #     s,e,f,d = defects[i,0]
+    #     start = tuple(contours_bin[s][0])
+    #     end = tuple(contours_bin[e][0])
+    #     far = tuple(contours_bin[f][0])
+    #     cv2.line(drawing,start,end,[0,255,0],2)
+    #     cv2.circle(drawing,far,5,[0,0,255],-1)
+
+    # cv2.imshow('img',drawing)
+    # cv2.waitKey(0)
+    # cv2.destroyAllWindows()
+
     # we have more than one contours in some image
     # than we need to consider only hand contour, it is 
     # the biggest one
@@ -249,58 +292,58 @@ def getHand(img_bgr):
     # get center of mass of pixels (also called centroid)
     center_of_mass = properties[0].centroid[::-1]
 
-    # get integer values of center of mass
-    x0, y0 = center_of_mass
-    y0, x0 = int(y0), int(x0)
+    # # get integer values of center of mass
+    # x0, y0 = center_of_mass
+    # y0, x0 = int(y0), int(x0)
 
-    # exists also weighted center of mass
-    weighted_center_of_mass = properties[0].weighted_centroid
+    # # exists also weighted center of mass
+    # weighted_center_of_mass = properties[0].weighted_centroid
 
-    # get major and minor axis of ellips
-    major_axis_length = properties[0].major_axis_length
-    minor_axis_length = properties[0].minor_axis_length
+    # # get major and minor axis of ellips
+    # major_axis_length = properties[0].major_axis_length
+    # minor_axis_length = properties[0].minor_axis_length
 
-    # get orientation of ellipse (in degree from x axis) 
-    orientation = properties[0].orientation
+    # # get orientation of ellipse (in degree from x axis) 
+    # orientation = properties[0].orientation
     
-    # print('centroid coord: ' , center_of_mass)
-    # print('maj ax lenght:  ' , major_axis_length)
-    # print('min ax lenght:  ' , minor_axis_length)
-    # print('orientation :   ' , orientation)
+    # # print('centroid coord: ' , center_of_mass)
+    # # print('maj ax lenght:  ' , major_axis_length)
+    # # print('min ax lenght:  ' , minor_axis_length)
+    # # print('orientation :   ' , orientation)
 
-    prop = [center_of_mass, major_axis_length, minor_axis_length, orientation]
+    # prop = [center_of_mass, major_axis_length, minor_axis_length, orientation]
 
-    # create image from binary image and labeled mask
-    ellipse_mask = label2rgb(labeled_foreground, img_binary, colors=['red', 'white'], alpha=0.2)
-    ellipse_mask = 255 * ellipse_mask
+    # # create image from binary image and labeled mask
+    # ellipse_mask = label2rgb(labeled_foreground, img_binary, colors=['red', 'white'], alpha=0.2)
+    # ellipse_mask = 255 * ellipse_mask
     
-    # draw in that image the center of mass and weighted center of mass
-    cv2.circle(ellipse_mask,(x0, y0), 5, (0,0,255), -1)
-    cv2.circle(ellipse_mask,(int(weighted_center_of_mass[1]), int(weighted_center_of_mass[0])), 5, (0,255,255), -1)
+    # # draw in that image the center of mass and weighted center of mass
+    # cv2.circle(ellipse_mask,(x0, y0), 5, (0,0,255), -1)
+    # cv2.circle(ellipse_mask,(int(weighted_center_of_mass[1]), int(weighted_center_of_mass[0])), 5, (0,255,255), -1)
 
-    # calculate and draw major axis of ellipse
-    x1 = int(x0 + math.cos(orientation) * 0.5 * major_axis_length)
-    y1 = int(y0 - math.sin(orientation) * 0.5 * major_axis_length)
-    cv2.line(ellipse_mask,(x0, y0), (x1, y1), (255,0,0) , 3) 
+    # # calculate and draw major axis of ellipse
+    # x1 = int(x0 + math.cos(orientation) * 0.5 * major_axis_length)
+    # y1 = int(y0 - math.sin(orientation) * 0.5 * major_axis_length)
+    # cv2.line(ellipse_mask,(x0, y0), (x1, y1), (255,0,0) , 3) 
 
-    # calculate and draw minor axis of ellipse
-    x2 = int(x0 - math.sin(orientation) * 0.5 * minor_axis_length)
-    y2 = int(y0 - math.cos(orientation) * 0.5 * minor_axis_length)
-    cv2.line(ellipse_mask,(x0, y0), (x2, y2), (255,0,0) , 3) 
+    # # calculate and draw minor axis of ellipse
+    # x2 = int(x0 - math.sin(orientation) * 0.5 * minor_axis_length)
+    # y2 = int(y0 - math.cos(orientation) * 0.5 * minor_axis_length)
+    # cv2.line(ellipse_mask,(x0, y0), (x2, y2), (255,0,0) , 3) 
 
-    # set width and height for ellipse
-    width = int(major_axis_length/2)
-    height = int(minor_axis_length/2)
+    # # set width and height for ellipse
+    # width = int(major_axis_length/2)
+    # height = int(minor_axis_length/2)
     
-    # draw ellipse 
-    cv2.ellipse(ellipse_mask,
-                (x0,y0),
-                (height, width), 
-                int(90 - orientation*360/(2*np.pi)), 
-                startAngle=0, 
-                endAngle=360, 
-                color=255, 
-                thickness=2)
+    # # draw ellipse 
+    # cv2.ellipse(ellipse_mask,
+    #             (x0,y0),
+    #             (height, width), 
+    #             int(90 - orientation*360/(2*np.pi)), 
+    #             startAngle=0, 
+    #             endAngle=360, 
+    #             color=255, 
+    #             thickness=2)
     
-    return hand_mask, contour, center_of_mass, ellipse_mask
+    return hand_mask, contour, center_of_mass, None # ellipse_mask
     
