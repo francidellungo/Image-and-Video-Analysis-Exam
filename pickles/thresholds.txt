@@ -1,4 +1,0 @@
-l1: (0.13, matrix([[0.]]))
-euclidean: (0.13, matrix([[0.]]))
-cosine: (0.04, matrix([[0.]]))
-chi-square: (0.39, matrix([[0.25333333]]))

@@ -21,7 +21,7 @@ def draw(img, contour, cnt_color, point_lists, point_list_colors = [255,255,255]
 		font = cv2.FONT_HERSHEY_SIMPLEX
 		for i, point in enumerate(point_lists):
 			xy = tuple([ int(x) for x in point[0] ])
-			cv2.putText(img, str(i), xy, font, 1, text_colors ,2,cv2.LINE_AA)
+			cv2.putText(img, 'r', xy, font, 1, text_colors ,2,cv2.LINE_AA)
 	
 	return img
 

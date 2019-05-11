@@ -109,10 +109,21 @@ def saveScores(w, h, path_in, hand_base, scores_path):
 
                 
                 # draw contour and finger points to image
-                img_points_hand = draw(_, contour, (0, 255, 0), finger_points, [255,0,0], _)
-
+                # img_points_hand = draw(_, contour, (0, 255, 0), finger_points, [255,0,0], _)
                 r_point_normal, r_index = getReferencePoint(contour, fingers_indexes, center_of_mass)
 
+                img_points_hand = draw(_, contour, (0, 255, 0), finger_points, [255,0,0], _)
+                # img_points_hand = draw(img_points_hand, [], _, valley_points, [0,0,255], _)
+                img_points_hand = draw(img_points_hand, [], _, [[center_of_mass]], [0,0,255], _)
+                # cv2.line(img_points_hand, (int(center_of_mass[0]), 0),(int(center_of_mass[0]), img_points_hand.shape[0]), [0,0,255])
+                img_points_hand = draw(img_points_hand, [], _, [r_point_normal], [255,0,0], [0,0,255])
+                # img_points_hand = draw(img_points_hand, [], _, [[center_of_mass]], [0,0,255], _)
+                # cv2.line(img_points_hand, (int(center_of_mass[0]), 0),(int(center_of_mass[0]), img_points_hand.shape[0]), [0,0,255])
+                # img_points_hand = draw(img_points_hand, [], _, [r_point_normal], [255,0,0], [0,0,255])
+                cv2.imwrite(hand_base + path_ell + name_img, img_points_hand)
+
+                img_points_hand = draw(_, contour, (0, 255, 0), [], [255,0,0], _)
+                
                 # print('update contour')
                 r_point, r_based_contour, r_based_valley_indexes, r_based_fingers_indexes = updateContour(contour, valley_indexes, fingers_indexes, r_index)
 
@@ -131,8 +142,14 @@ def saveScores(w, h, path_in, hand_base, scores_path):
                 # draw complementary valley to image
                 # print('complementary valley')
                 img_points_hand = draw(img_points_hand, [], _, r_based_contour[comp_valley_indexes], [0,255,255], _)
+                # for f, m in zip(r_based_contour[r_based_fingers_indexes], medium_points):
+                #         # (int(f[0][0]), int(f[0][1])), tuple(int(m[0][0]), int(m[0][1])
+                #         cv2.line(img_points_hand, (int(f[0][0]), int(f[0][1])), (int(m[0][0]), int(m[0][1])), [255,255,255])
+                
+                # cv2.line(img_points_hand, (int(medium_points[0][0][0]), int(medium_points[0][0][1]) ) , (int(medium_points[3][0][0]), int(medium_points[3][0][1]) ) , [255,255,255])
+                # cv2.line(img_points_hand, (int(medium_points[3][0][0]), int(medium_points[3][0][1]) ) , (int(medium_points[4][0][0]), int(medium_points[4][0][1]) ) , [255,255,255])
 
-                updated_contour = fingerRegistration(r_based_contour, center_of_mass, r_based_contour[r_based_fingers_indexes], medium_points, comp_valley_indexes, valley_indexes)
+                updated_contour = fingerRegistration(copy.deepcopy(r_based_contour), center_of_mass, r_based_contour[r_based_fingers_indexes], medium_points, comp_valley_indexes, valley_indexes)
 
                 # draw new contour to image
                 img_points_hand = draw(img_points_hand, updated_contour, (255, 255, 255), [], _, _)
@@ -155,9 +172,16 @@ def saveScores(w, h, path_in, hand_base, scores_path):
                 plt.scatter(r_based_fingers_indexes, [ dm_u[idx] for idx in r_based_fingers_indexes], c='r', label='finger points')
                 plt.scatter(valley_indexes, [ dm_u[idx] for idx in valley_indexes], c='g', label='valley points')
                 plt.scatter(comp_valley_indexes, [ dm_u[idx] for idx in comp_valley_indexes] , c='y', label='valley points')
-                plt.savefig(hand_base + dist_path + new_name_img + 'update.png')
+                plt.savefig(hand_base + dist_path + new_name_img + '_dmap_update.png')
                 plt.close()
 
+                plt.plot(range(len(updated_contour)), om_u, 'b--', label="distance map")
+                # print(r_based_fingers_indexes, dm)
+                plt.scatter(r_based_fingers_indexes, [ om_u[idx] for idx in r_based_fingers_indexes], c='r', label='finger points')
+                plt.scatter(valley_indexes, [ om_u[idx] for idx in valley_indexes], c='g', label='valley points')
+                plt.scatter(comp_valley_indexes, [ om_u[idx] for idx in comp_valley_indexes] , c='y', label='valley points')
+                plt.savefig(hand_base + dist_path + new_name_img + '_omap_update.png')
+                plt.close()
 
                 geom_scores[i % h][int(i / h)] = geom_features
                 distance_scores[i % h][int(i / h)] = distance_features
@@ -237,8 +261,6 @@ def fusionScores(measures, num_imgs, pickle_base, norms_path):
                 np.save(pickle_base + 'mini_maxi/' + 'fusion_' + mea, (mini, maxi))
 
 
-
-
 def saveFigures(scores_reduct_all, measures, pickle_base, params_path, path_figs, thresholds):
 
         h = 100
@@ -287,7 +309,8 @@ def saveThreshFigure(h, w, measures, performance_params_list, path_figs, title, 
 
                 idx_EER = np.argmin(np.abs(np.subtract(y_FAR, y_FRR)))
                 # print(idx_EER)
-                EER = (x[idx_EER], y_FAR[idx_EER])
+                a = np.array(y_FAR[idx_EER][0][0])[0][0]
+                EER = (x[idx_EER], a)
 
                 EERs[mea] = EER 
                 
@@ -300,6 +323,8 @@ def saveThreshFigure(h, w, measures, performance_params_list, path_figs, title, 
                 plt.legend()
                 plt.savefig(path_figs + 'thresh_fusion_' + measure + '.png')
                 plt.close()
+
+        print(EERs)
 
         with open(thresholds + 'thresholds_' + title + '.json', 'w') as f:
                 json.dump(EERs, f)
@@ -387,13 +412,15 @@ def countPeoplePhoto(path):
 
 
 def test(measures, path_test, hand_path, pickle_path , norms_path, row_path):
+
+        print(' ----            TEST            ---- ')
         
-        tests = os.listdir(path_test)
+        tests = os.listdir(path_test + hand_path + path_in)
         tests.sort()
 
         n_people = len(tests)
 
-        saveScores(n_people, 1, path_test, path_test + hand_path, path_test + pickle_path + scores_path)
+        saveScores(n_people, 1, path_test + hand_path + path_in, path_test + hand_path, path_test + pickle_path + scores_path)
 
         EERs_g = dict()
         EERs_f = dict()
@@ -412,7 +439,7 @@ def test(measures, path_test, hand_path, pickle_path , norms_path, row_path):
         with open(thresholds + 'thresholds_orientation.json', 'r') as f:
                 EERs_o = json.load(f)
         
-        GG = np.load( path_test + pickle_path + scores_path + 'geom.npy' )                
+        GG = np.load( path_test + pickle_path + scores_path + 'geom.npy' )
         DD = np.load( path_test + pickle_path + scores_path + 'distance.npy' )            
         OO = np.load( path_test + pickle_path + scores_path + 'orientation.npy' )     
 
@@ -426,32 +453,30 @@ def test(measures, path_test, hand_path, pickle_path , norms_path, row_path):
                 for cod, (measure, mea) in measures:
                         
                         (r_g, ci_g)     = np.load( row_path + 'geom_' + mea + '.npy' )                # g_centroids_indexes
-                        (g_mn, g_mx)    = np.load(pickle_base + 'mini_maxi/' + 'geom_' + mea)
+                        (g_mn, g_mx)    = np.load(pickle_base + 'mini_maxi/' + 'geom_' + mea + '.npy')
 
                         (r_d, ci_d)     = np.load( row_path + 'distance_' + mea + '.npy' )            # d_centroids_indexes
-                        (d_mn, d_mx)    = np.load(pickle_base + 'mini_maxi/' + 'distance_' + mea)
+                        (d_mn, d_mx)    = np.load(pickle_base + 'mini_maxi/' + 'distance_' + mea + '.npy')
 
                         (r_o, ci_o)     = np.load( row_path + 'orientation_' + mea + '.npy' )         # o_centroids_indexes
-                        (o_mn, o_mx)    = np.load(pickle_base + 'mini_maxi/' + 'orientation_' + mea)
+                        (o_mn, o_mx)    = np.load(pickle_base + 'mini_maxi/' + 'orientation_' + mea + '.npy')
 
-                        (z_big_centroids_indexes, _) = np.load(pickle_base + norms_path + 'fusion_' + mea)
-                        (f_mn, f_mx)    = np.load(pickle_base + 'mini_maxi/' + 'fusion_' + mea)
+                        (z_big_centroids_indexes, _) = np.load(pickle_base + norms_path + 'fusion_' + mea + '.npy')
+                        (f_mn, f_mx)    = np.load(pickle_base + 'mini_maxi/' + 'fusion_' + mea + '.npy')
 
-                        g, d, o = GG[i], DD[i], OO[i]
+                        g, d, o = GG[0][i], DD[0][i], OO[0][i]
 
-                        # print(r_g)
-                        # print(len(ci_g))
                         g_centroid = ci_g[np.ix_(r_g)]
                         d_centroid = ci_d[np.ix_(r_d)]
                         o_centroid = ci_o[np.ix_(r_o)]
 
-                        _, g_big_matrix, g_big_centroids_indexes = allScores(np.append( g_centroid, g ), cod, measure)
+                        _, g_big_matrix, g_big_centroids_indexes = allScores(np.array([np.append(g_centroid, [g], axis=0)]), cod, measure)
                         g_norm = matrixNormalizationMiniMaxi(g_big_matrix, g_mn, g_mx)
-                        _, d_big_matrix, d_big_centroids_indexes = allScores(np.append( d_centroid, d ), cod, measure)
+                        _, d_big_matrix, d_big_centroids_indexes = allScores(np.array([np.append(d_centroid, [d], axis=0)]), cod, measure)
                         d_norm = matrixNormalizationMiniMaxi(d_big_matrix, d_mn, d_mx)
-                        _, o_big_matrix, o_big_centroids_indexes = allScores(np.append( o_centroid, o ), cod, measure)
+                        _, o_big_matrix, o_big_centroids_indexes = allScores(np.array([np.append(o_centroid, [o], axis=0)]), cod, measure)
                         o_norm = matrixNormalizationMiniMaxi(o_big_matrix, o_mn, o_mx)
-
+                                        
                         g_dist_norm = g_norm[-1]
                         d_dist_norm = d_norm[-1]
                         o_dist_norm = o_norm[-1]
@@ -459,24 +484,16 @@ def test(measures, path_test, hand_path, pickle_path , norms_path, row_path):
                         pd = np.multiply(d_dist_norm, o_dist_norm)
                         f_dist = np.minimum(pd, g_dist_norm)
                         f_dist_norm = matrixNormalizationMiniMaxi(f_dist, f_mn, f_mx)
-                        
-                        g_maybe = [ x for x, y in enumerate(np.array( g_dist_norm[ np.ix_(0, g_big_centroids_indexes) ] ) ) if y < EERs_g[mea]]
-                        d_maybe = [ x for x, y in enumerate(np.array( d_dist_norm[ np.ix_(0, d_big_centroids_indexes) ] ) ) if y < EERs_d[mea]]
-                        o_maybe = [ x for x, y in enumerate(np.array( o_dist_norm[ np.ix_(0, o_big_centroids_indexes) ] ) ) if y < EERs_o[mea]]
-                        f_maybe = [ x for x, y in enumerate(np.array( f_dist_norm[ np.ix_(0, z_big_centroids_indexes) ] ) ) if y < EERs_f[mea]]
+
+                        g_maybe = [ x for x, y in enumerate( g_dist_norm[:-1] ) if y < EERs_g[mea][0]]
+                        d_maybe = [ x for x, y in enumerate( d_dist_norm[:-1] ) if y < EERs_d[mea][0]]
+                        o_maybe = [ x for x, y in enumerate( o_dist_norm[:-1] ) if y < EERs_o[mea][0]]
+                        f_maybe = [ x for x, y in enumerate( f_dist_norm[:-1] ) if y < EERs_f[mea][0]]
 
                         print('geom is similar images n: ', g_maybe, ' for measure ', mea)
                         print('dMap is similar images n: ', d_maybe, ' for measure ', mea)
                         print('oMap is similar images n: ', o_maybe, ' for measure ', mea)
                         print('fusi is similar images n: ', f_maybe, ' for measure ', mea)
-
-
-
-                        
-
-                        
-
-
 
 
 def main():
@@ -514,7 +531,7 @@ def main():
 
         saveFigures(scores_reduct_all, measures, pickle_base,  params_path, path_figs, thresholds)
 
-        # test(measures, path_test, hand_path, pickle_path, norms_path, pickle_base + row_path )
+        test(measures, path_test, hand_path, pickle_path, norms_path, pickle_base + row_path )
         
         
 
