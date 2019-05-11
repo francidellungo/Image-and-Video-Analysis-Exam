@@ -89,7 +89,7 @@ def saveScores(w, h, path_in, hand_base, scores_path):
                 # print("getHand: ")
 
                 # save image in output path    
-                cv2.imwrite(hand_base + path_out + name_img, hand_mask)
+                # cv2.imwrite(hand_base + path_out + name_img, hand_mask)
                 # cv2.imwrite(hand_base + path_ell + name_img, ellipse)
                 
                 """ img_points_hand = cv2.imread('./hands/rotates/001_1.JPG')
@@ -104,44 +104,44 @@ def saveScores(w, h, path_in, hand_base, scores_path):
                 # rotate based on middle finger point to center of mass axes
                 hand_mask_rotated, finger_points, valley_points, contour, center_of_mass = rotateHand(hand_mask.shape, contour, getAngle(finger_points[2],[list(center_of_mass)]), center_of_mass, fingers_indexes, valley_indexes)
 
-                # save image in output path    
-                cv2.imwrite(hand_base + path_rot + name_img, hand_mask_rotated)
+                        # save image in output path    
+                # cv2.imwrite(hand_base + path_rot + name_img, hand_mask_rotated)
 
                 
-                # draw contour and finger points to image
+                        # draw contour and finger points to image
                 # img_points_hand = draw(_, contour, (0, 255, 0), finger_points, [255,0,0], _)
                 r_point_normal, r_index = getReferencePoint(contour, fingers_indexes, center_of_mass)
 
-                img_points_hand = draw(_, contour, (0, 255, 0), finger_points, [255,0,0], _)
+                # img_points_hand = draw(_, contour, (0, 255, 0), finger_points, [255,0,0], _)
                 # img_points_hand = draw(img_points_hand, [], _, valley_points, [0,0,255], _)
-                img_points_hand = draw(img_points_hand, [], _, [[center_of_mass]], [0,0,255], _)
-                # cv2.line(img_points_hand, (int(center_of_mass[0]), 0),(int(center_of_mass[0]), img_points_hand.shape[0]), [0,0,255])
-                img_points_hand = draw(img_points_hand, [], _, [r_point_normal], [255,0,0], [0,0,255])
                 # img_points_hand = draw(img_points_hand, [], _, [[center_of_mass]], [0,0,255], _)
                 # cv2.line(img_points_hand, (int(center_of_mass[0]), 0),(int(center_of_mass[0]), img_points_hand.shape[0]), [0,0,255])
                 # img_points_hand = draw(img_points_hand, [], _, [r_point_normal], [255,0,0], [0,0,255])
-                cv2.imwrite(hand_base + path_ell + name_img, img_points_hand)
+                # img_points_hand = draw(img_points_hand, [], _, [[center_of_mass]], [0,0,255], _)
+                # cv2.line(img_points_hand, (int(center_of_mass[0]), 0),(int(center_of_mass[0]), img_points_hand.shape[0]), [0,0,255])
+                # img_points_hand = draw(img_points_hand, [], _, [r_point_normal], [255,0,0], [0,0,255])
+                # cv2.imwrite(hand_base + path_ell + name_img, img_points_hand)
 
-                img_points_hand = draw(_, contour, (0, 255, 0), [], [255,0,0], _)
+                # img_points_hand = draw(_, contour, (0, 255, 0), [], [255,0,0], _)
                 
                 # print('update contour')
                 r_point, r_based_contour, r_based_valley_indexes, r_based_fingers_indexes = updateContour(contour, valley_indexes, fingers_indexes, r_index)
 
                 # draw center of mass to image
-                img_points_hand = draw(img_points_hand, [], _, [[center_of_mass]], [0,0,255], _)
+                # img_points_hand = draw(img_points_hand, [], _, [[center_of_mass]], [0,0,255], _)
 
                 # valley_indexes has 5 points updating after complementary search
                 medium_points, valley_indexes, comp_valley_indexes = calculateMediumPoints(r_based_contour, r_based_valley_indexes, r_based_fingers_indexes)
 
-                # draw medium to image
-                # print('medium')
-                img_points_hand = draw(img_points_hand, [], _, medium_points, [255,255,255], _)
-                # draw valley to image
-                # print('valley')
-                img_points_hand = draw(img_points_hand, [], _, r_based_contour[valley_indexes], [0,0,255], _)
-                # draw complementary valley to image
-                # print('complementary valley')
-                img_points_hand = draw(img_points_hand, [], _, r_based_contour[comp_valley_indexes], [0,255,255], _)
+                        # draw medium to image
+                        # print('medium')
+                # img_points_hand = draw(img_points_hand, [], _, medium_points, [255,255,255], _)
+                        # draw valley to image
+                        # print('valley')
+                # img_points_hand = draw(img_points_hand, [], _, r_based_contour[valley_indexes], [0,0,255], _)
+                        # draw complementary valley to image
+                        # print('complementary valley')
+                # img_points_hand = draw(img_points_hand, [], _, r_based_contour[comp_valley_indexes], [0,255,255], _)
                 # for f, m in zip(r_based_contour[r_based_fingers_indexes], medium_points):
                 #         # (int(f[0][0]), int(f[0][1])), tuple(int(m[0][0]), int(m[0][1])
                 #         cv2.line(img_points_hand, (int(f[0][0]), int(f[0][1])), (int(m[0][0]), int(m[0][1])), [255,255,255])
@@ -151,10 +151,10 @@ def saveScores(w, h, path_in, hand_base, scores_path):
 
                 updated_contour = fingerRegistration(copy.deepcopy(r_based_contour), center_of_mass, r_based_contour[r_based_fingers_indexes], medium_points, comp_valley_indexes, valley_indexes)
 
-                # draw new contour to image
-                img_points_hand = draw(img_points_hand, updated_contour, (255, 255, 255), [], _, _)
+                        # draw new contour to image
+                # img_points_hand = draw(img_points_hand, updated_contour, (255, 255, 255), [], _, _)
 
-                cv2.imwrite(hand_base + path_pts + name_img, img_points_hand)
+                # cv2.imwrite(hand_base + path_pts + name_img, img_points_hand)
 
                 # to extract geometrical features we used non rotated fingers 
                 _, geom_features = extractGeometricalFeatures(r_based_contour[r_based_fingers_indexes], medium_points)
@@ -167,21 +167,21 @@ def saveScores(w, h, path_in, hand_base, scores_path):
                 distance_features, orientation_features, dm_u, om_u  = extractShapeFeatures(updated_contour, 0)
                 # print("n dist, orient features: ",len(distance_features), len(orientation_features))
 
-                plt.plot(range(len(updated_contour)), dm_u, 'b--', label="distance map")
-                # print(r_based_fingers_indexes, dm)
-                plt.scatter(r_based_fingers_indexes, [ dm_u[idx] for idx in r_based_fingers_indexes], c='r', label='finger points')
-                plt.scatter(valley_indexes, [ dm_u[idx] for idx in valley_indexes], c='g', label='valley points')
-                plt.scatter(comp_valley_indexes, [ dm_u[idx] for idx in comp_valley_indexes] , c='y', label='valley points')
-                plt.savefig(hand_base + dist_path + new_name_img + '_dmap_update.png')
-                plt.close()
+                # plt.plot(range(len(updated_contour)), dm_u, 'b--', label="distance map")
+                        # print(r_based_fingers_indexes, dm)
+                # plt.scatter(r_based_fingers_indexes, [ dm_u[idx] for idx in r_based_fingers_indexes], c='r', label='finger points')
+                # plt.scatter(valley_indexes, [ dm_u[idx] for idx in valley_indexes], c='g', label='valley points')
+                # plt.scatter(comp_valley_indexes, [ dm_u[idx] for idx in comp_valley_indexes] , c='y', label='valley points')
+                # plt.savefig(hand_base + dist_path + new_name_img + '_dmap_update.png')
+                # plt.close()
 
-                plt.plot(range(len(updated_contour)), om_u, 'b--', label="distance map")
-                # print(r_based_fingers_indexes, dm)
-                plt.scatter(r_based_fingers_indexes, [ om_u[idx] for idx in r_based_fingers_indexes], c='r', label='finger points')
-                plt.scatter(valley_indexes, [ om_u[idx] for idx in valley_indexes], c='g', label='valley points')
-                plt.scatter(comp_valley_indexes, [ om_u[idx] for idx in comp_valley_indexes] , c='y', label='valley points')
-                plt.savefig(hand_base + dist_path + new_name_img + '_omap_update.png')
-                plt.close()
+                # plt.plot(range(len(updated_contour)), om_u, 'b--', label="distance map")
+                        # print(r_based_fingers_indexes, dm)
+                # plt.scatter(r_based_fingers_indexes, [ om_u[idx] for idx in r_based_fingers_indexes], c='r', label='finger points')
+                # plt.scatter(valley_indexes, [ om_u[idx] for idx in valley_indexes], c='g', label='valley points')
+                # plt.scatter(comp_valley_indexes, [ om_u[idx] for idx in comp_valley_indexes] , c='y', label='valley points')
+                # plt.savefig(hand_base + dist_path + new_name_img + '_omap_update.png')
+                # plt.close()
 
                 geom_scores[i % h][int(i / h)] = geom_features
                 distance_scores[i % h][int(i / h)] = distance_features
