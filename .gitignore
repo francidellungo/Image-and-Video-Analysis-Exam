@@ -1,13 +1,15 @@
 # OUR stuff folders
 
-# hands
+hands
 #     masks
 #     rotates
 #     points
 #     ellipses
-# /pickles
+pickles
 # !pickles/scores
-# figures
+figures
+tests
+
 aio.py
 
 
