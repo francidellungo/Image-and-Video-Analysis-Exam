@@ -8,6 +8,7 @@ from ComputeScores import *
 import matplotlib.pyplot as plt
 import copy
 import json
+from operator import itemgetter
 
 hand_base = './hands/'
 path_in = 'dataset/'
@@ -418,6 +419,13 @@ def test(measures, path_test, hand_path, pickle_path , norms_path, row_path):
         tests = os.listdir(path_test + hand_path + path_in)
         tests.sort()
 
+        dataset = os.listdir(hand_base + path_in)
+        dataset = [ image.replace('.JPG', '').split("_")[0] for image in dataset] 
+        
+        dataset = set(dataset)
+        dataset = list(dataset)
+        dataset.sort()
+
         n_people = len(tests)
 
         saveScores(n_people, 1, path_test + hand_path + path_in, path_test + hand_path, path_test + pickle_path + scores_path)
@@ -443,12 +451,15 @@ def test(measures, path_test, hand_path, pickle_path , norms_path, row_path):
         DD = np.load( path_test + pickle_path + scores_path + 'distance.npy' )            
         OO = np.load( path_test + pickle_path + scores_path + 'orientation.npy' )     
 
+        fusion_success = 0
+        fusion_insuccess = 0
+
         for i, name_img in enumerate(tests):
 
                 print('\n \n ---> ' ,name_img)
                 new_name_img = name_img.replace('.JPG', '')
                 person_idx, img_idx = new_name_img.split("_")[:]
-                print(person_idx, img_idx)
+                # print(person_idx, img_idx)
 
                 for cod, (measure, mea) in measures:
                         
@@ -485,16 +496,26 @@ def test(measures, path_test, hand_path, pickle_path , norms_path, row_path):
                         f_dist = np.minimum(pd, g_dist_norm)
                         f_dist_norm = matrixNormalizationMiniMaxi(f_dist, f_mn, f_mx)
 
-                        g_maybe = [ x for x, y in enumerate( g_dist_norm[:-1] ) if y < EERs_g[mea][0]]
-                        d_maybe = [ x for x, y in enumerate( d_dist_norm[:-1] ) if y < EERs_d[mea][0]]
-                        o_maybe = [ x for x, y in enumerate( o_dist_norm[:-1] ) if y < EERs_o[mea][0]]
-                        f_maybe = [ x for x, y in enumerate( f_dist_norm[:-1] ) if y < EERs_f[mea][0]]
+                        g_maybe = [x[0] for x in sorted([ [x, y] for x, y in enumerate( g_dist_norm[:-1] ) if y < EERs_g[mea][0]], key=itemgetter(1))]
+                        d_maybe = [x[0] for x in sorted([ [x, y] for x, y in enumerate( d_dist_norm[:-1] ) if y < EERs_d[mea][0]], key=itemgetter(1))]
+                        o_maybe = [x[0] for x in sorted([ [x, y] for x, y in enumerate( o_dist_norm[:-1] ) if y < EERs_o[mea][0]], key=itemgetter(1))]
+                        f_maybe = [x[0] for x in sorted([ [x, y] for x, y in enumerate( f_dist_norm[:-1] ) if y < EERs_f[mea][0]], key=itemgetter(1))] 
 
-                        print('geom is similar images n: ', g_maybe, ' for measure ', mea)
-                        print('dMap is similar images n: ', d_maybe, ' for measure ', mea)
-                        print('oMap is similar images n: ', o_maybe, ' for measure ', mea)
-                        print('fusi is similar images n: ', f_maybe, ' for measure ', mea)
+                        print('TEST ' , person_idx , ' geom ' , [dataset[idx] for idx in g_maybe] , ' ', mea)
+                        print('TEST ' , person_idx , ' dMap ' , [dataset[idx] for idx in d_maybe] , ' ', mea)
+                        print('TEST ' , person_idx , ' oMap ' , [dataset[idx] for idx in o_maybe] , ' ', mea)
+                        print('TEST ' , person_idx , ' fusi ' , [dataset[idx] for idx in f_maybe] , ' ', mea)
 
+                        if len([dataset[idx] for idx in f_maybe]) > 0:
+                                if person_idx == dataset[f_maybe[0]]:
+                                        fusion_success = fusion_success + 1
+                                else:
+                                        fusion_insuccess = fusion_insuccess + 1
+                        else:
+                                print(person_idx, ' not found in dataset. ')
+
+        print('TEST success: ', fusion_success)
+        print('TEST insuccess: ', fusion_insuccess)
 
 def main():
         
@@ -502,7 +523,7 @@ def main():
 
         n_people, _ = countPeoplePhoto(hand_base + path_in)
 
-        saveScores(n_people, 5, hand_base + path_in, hand_base, pickle_base + scores_path)
+        # saveScores(n_people, 5, hand_base + path_in, hand_base, pickle_base + scores_path)
 
         g_scores = np.load(pickle_base + scores_path + 'geom.npy')
         d_scores = np.load(pickle_base + scores_path + 'distance.npy')
@@ -516,7 +537,7 @@ def main():
                 ( o_scores, ('o', 'orientation'))  
         ]
 
-        saveMatrix(scores, measures, pickle_base, norms_path, row_path)
+        # saveMatrix(scores, measures, pickle_base, norms_path, row_path)
 
         scores_reduct_all = [
                 ( 'g', 'geom'       ),
@@ -525,11 +546,11 @@ def main():
                 ( 'f', 'fusion'     )
         ]
 
-        fusionScores(measures, num_imgs, pickle_base, norms_path)
+        # fusionScores(measures, num_imgs, pickle_base, norms_path)
 
-        saveParams(scores_reduct_all, measures, num_imgs, pickle_base, params_path, norms_path)
+        # saveParams(scores_reduct_all, measures, num_imgs, pickle_base, params_path, norms_path)
 
-        saveFigures(scores_reduct_all, measures, pickle_base,  params_path, path_figs, thresholds)
+        # saveFigures(scores_reduct_all, measures, pickle_base,  params_path, path_figs, thresholds)
 
         test(measures, path_test, hand_path, pickle_path, norms_path, pickle_base + row_path )
         
