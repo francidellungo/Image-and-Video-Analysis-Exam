@@ -65,9 +65,9 @@ def saveScores(w, h, path_in, hand_base, scores_path):
 
         # matrices with scores for all people and all imgs ( features_scores[person][img] )
 
-        geom_scores = [[0 for x in range(w)] for y in range(h)]
-        distance_scores = [[0 for x in range(w)] for y in range(h)]
-        orientation_scores = [[0 for x in range(w)] for y in range(h)]
+        geom_scores = []
+        distance_scores = []
+        orientation_scores = []
         
         # print('\n\n n pers:', h, 'n images: ', w)
 
@@ -184,9 +184,9 @@ def saveScores(w, h, path_in, hand_base, scores_path):
                 plt.savefig(hand_base + dist_path + new_name_img + '_omap_update.png')
                 plt.close()
 
-                geom_scores[i % h][int(i / h)] = geom_features
-                distance_scores[i % h][int(i / h)] = distance_features
-                orientation_scores[i % h][int(i / h)] = orientation_features
+                geom_scores.append(geom_features)
+                distance_scores.append(distance_features)
+                orientation_scores.append(orientation_features)
 
         geom_scores = np.array(geom_scores)
         distance_scores = np.array(distance_scores)
@@ -195,6 +195,8 @@ def saveScores(w, h, path_in, hand_base, scores_path):
         np.save( scores_path + 'geom', geom_scores)
         np.save( scores_path + 'distance', distance_scores)
         np.save( scores_path + 'orientation', orientation_scores)
+
+        return geom_scores, distance_scores, orientation_scores
 
 
 def saveMatrix(scores, measures, pickle_base, norms_path, row_path):
@@ -210,6 +212,40 @@ def saveMatrix(scores, measures, pickle_base, norms_path, row_path):
                         np.save(pickle_base + norms_path + file_name + '_' + mea, (centroids_indexes, matrix_distances_norm))
                         np.save(pickle_base + row_path + file_name + '_' + mea, (centroids_indexes, row_scores))
                         np.save(pickle_base + 'mini_maxi/' + file_name + '_' + mea, (mini, maxi))
+
+
+def GenuiniImposter(h, scores, measures, pickle_base, norms_path, row_path):
+
+        for cod, (measure, mea) in measures:
+
+                for score, (l, file_name) in scores:
+
+                        G = []
+                        prima = []
+                        centroids = []
+                        meanshape = []
+
+                        for i, p in enumerate([score[idx:idx+h] for idx in range(0, len(score), h)]):
+                                
+                                if cod == 0:
+                                        matrix = pairwise_distances( p , metric=measure )
+
+                                else:
+                                        matrix = 1 - pairwise.chi2_kernel( p ) 
+                                
+                                app = []
+                                for i, row in enumerate(matrix):
+                                        app.append(list(row[i+1:]))
+                                G.append(sum(app, []))
+
+                                prima.append(p[0])
+                                centroids.append(p[np.argmin( np.matrix(matrix).mean(1))])
+                                meanshape.append(np.mean(np.array(p), axis=0))
+
+                        np.save('./pickles/Genuini/' + file_name + '_' + mea, (prima, centroids, meanshape))
+                        np.save('./pickles/Imposter/' + file_name + '_' + mea, (prima, centroids, meanshape))
+                
+                        
 
 
 def saveParams(scores, measures, num_imgs, pickle_base, params_path, norms_path, scale):
@@ -529,6 +565,7 @@ def test(measures, path_test, hand_path, pickle_path , norms_path, row_path):
         print('TEST verification success: ', verification_success)
         print('TEST verification insuccess: ', verification_insuccess)
 
+
 def main():
 
         scale = 1000
@@ -537,11 +574,11 @@ def main():
 
         n_people, _ = countPeoplePhoto(hand_base + path_in)
 
-        saveScores(n_people, 5, hand_base + path_in, hand_base, pickle_base + scores_path)
+        g_scores, d_scores, o_scores = saveScores(n_people, 5, hand_base + path_in, hand_base, pickle_base + scores_path)
 
-        g_scores = np.load(pickle_base + scores_path + 'geom.npy')
-        d_scores = np.load(pickle_base + scores_path + 'distance.npy')
-        o_scores = np.load(pickle_base + scores_path + 'orientation.npy')
+        # g_scores = np.load(pickle_base + scores_path + 'geom.npy')
+        # d_scores = np.load(pickle_base + scores_path + 'distance.npy')
+        # o_scores = np.load(pickle_base + scores_path + 'orientation.npy')
 
         num_imgs = g_scores.shape[0]
         
@@ -550,6 +587,9 @@ def main():
                 ( d_scores, ('d', 'distance')   ),
                 ( o_scores, ('o', 'orientation'))  
         ]
+
+        GenuiniImposter(5, scores, measures, pickle_base, norms_path, row_path)
+
 
         saveMatrix(scores, measures, pickle_base, norms_path, row_path)
 
