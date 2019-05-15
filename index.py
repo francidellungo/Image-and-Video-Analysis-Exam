@@ -168,21 +168,21 @@ def saveScores(w, h, path_in, hand_base, scores_path):
                 distance_features, orientation_features, dm_u, om_u  = extractShapeFeatures(updated_contour, 0)
                 # print("n dist, orient features: ",len(distance_features), len(orientation_features))
 
-                # plt.plot(range(len(updated_contour)), dm_u, 'b--', label="distance map")
+                plt.plot(range(len(updated_contour)), dm_u, 'b--', label="distance map")
                         # print(r_based_fingers_indexes, dm)
                 # plt.scatter(r_based_fingers_indexes, [ dm_u[idx] for idx in r_based_fingers_indexes], c='r', label='finger points')
                 # plt.scatter(valley_indexes, [ dm_u[idx] for idx in valley_indexes], c='g', label='valley points')
                 # plt.scatter(comp_valley_indexes, [ dm_u[idx] for idx in comp_valley_indexes] , c='y', label='valley points')
-                # plt.savefig(hand_base + dist_path + new_name_img + '_dmap_update.png')
-                # plt.close()
+                plt.savefig(hand_base + dist_path + new_name_img + '_dmap_update.png')
+                plt.close()
 
-                # plt.plot(range(len(updated_contour)), om_u, 'b--', label="distance map")
-                        # print(r_based_fingers_indexes, dm)
+                plt.plot(range(len(updated_contour)), om_u, 'b--', label="distance map")
+                # print(r_based_fingers_indexes, dm)
                 # plt.scatter(r_based_fingers_indexes, [ om_u[idx] for idx in r_based_fingers_indexes], c='r', label='finger points')
                 # plt.scatter(valley_indexes, [ om_u[idx] for idx in valley_indexes], c='g', label='valley points')
                 # plt.scatter(comp_valley_indexes, [ om_u[idx] for idx in comp_valley_indexes] , c='y', label='valley points')
-                # plt.savefig(hand_base + dist_path + new_name_img + '_omap_update.png')
-                # plt.close()
+                plt.savefig(hand_base + dist_path + new_name_img + '_omap_update.png')
+                plt.close()
 
                 geom_scores[i % h][int(i / h)] = geom_features
                 distance_scores[i % h][int(i / h)] = distance_features
@@ -453,6 +453,9 @@ def test(measures, path_test, hand_path, pickle_path , norms_path, row_path):
 
         fusion_success = 0
         fusion_insuccess = 0
+        verification_success = 0
+        verification_insuccess = 0
+
 
         for i, name_img in enumerate(tests):
 
@@ -501,21 +504,28 @@ def test(measures, path_test, hand_path, pickle_path , norms_path, row_path):
                         o_maybe = [x[0] for x in sorted([ [x, y] for x, y in enumerate( o_dist_norm[:-1] ) if y < EERs_o[mea][0]], key=itemgetter(1))]
                         f_maybe = [x[0] for x in sorted([ [x, y] for x, y in enumerate( f_dist_norm[:-1] ) if y < EERs_f[mea][0]], key=itemgetter(1))] 
 
-                        print('TEST ' , person_idx , ' geom ' , [dataset[idx] for idx in g_maybe] , ' ', mea)
-                        print('TEST ' , person_idx , ' dMap ' , [dataset[idx] for idx in d_maybe] , ' ', mea)
-                        print('TEST ' , person_idx , ' oMap ' , [dataset[idx] for idx in o_maybe] , ' ', mea)
-                        print('TEST ' , person_idx , ' fusi ' , [dataset[idx] for idx in f_maybe] , ' ', mea)
+                        # print('TEST ' , person_idx , ' geom ' , [dataset[idx] for idx in g_maybe] , ' ', mea)
+                        # print('TEST ' , person_idx , ' dMap ' , [dataset[idx] for idx in d_maybe] , ' ', mea)
+                        # print('TEST ' , person_idx , ' oMap ' , [dataset[idx] for idx in o_maybe] , ' ', mea)
+                        print('TEST ' , person_idx , ' fusion ' , [dataset[idx] for idx in f_maybe] , ' ', mea)
 
                         if len([dataset[idx] for idx in f_maybe]) > 0:
                                 if person_idx == dataset[f_maybe[0]]:
                                         fusion_success = fusion_success + 1
                                 else:
                                         fusion_insuccess = fusion_insuccess + 1
+
+                                if person_idx in  [dataset[idx] for idx in f_maybe]:
+                                        verification_success = verification_success + 1
+                                else:
+                                        verification_insuccess = verification_insuccess + 1
                         else:
                                 print(person_idx, ' not found in dataset. ')
 
-        print('TEST success: ', fusion_success)
-        print('TEST insuccess: ', fusion_insuccess)
+        print('TEST identification success: ', fusion_success)
+        print('TEST identification insuccess: ', fusion_insuccess)
+        print('TEST verification success: ', verification_success)
+        print('TEST verification insuccess: ', verification_insuccess)
 
 def main():
         
@@ -523,7 +533,7 @@ def main():
 
         n_people, _ = countPeoplePhoto(hand_base + path_in)
 
-        # saveScores(n_people, 5, hand_base + path_in, hand_base, pickle_base + scores_path)
+        saveScores(n_people, 5, hand_base + path_in, hand_base, pickle_base + scores_path)
 
         g_scores = np.load(pickle_base + scores_path + 'geom.npy')
         d_scores = np.load(pickle_base + scores_path + 'distance.npy')
@@ -537,7 +547,7 @@ def main():
                 ( o_scores, ('o', 'orientation'))  
         ]
 
-        # saveMatrix(scores, measures, pickle_base, norms_path, row_path)
+        saveMatrix(scores, measures, pickle_base, norms_path, row_path)
 
         scores_reduct_all = [
                 ( 'g', 'geom'       ),
@@ -546,11 +556,11 @@ def main():
                 ( 'f', 'fusion'     )
         ]
 
-        # fusionScores(measures, num_imgs, pickle_base, norms_path)
+        fusionScores(measures, num_imgs, pickle_base, norms_path)
 
-        # saveParams(scores_reduct_all, measures, num_imgs, pickle_base, params_path, norms_path)
+        saveParams(scores_reduct_all, measures, num_imgs, pickle_base, params_path, norms_path)
 
-        # saveFigures(scores_reduct_all, measures, pickle_base,  params_path, path_figs, thresholds)
+        saveFigures(scores_reduct_all, measures, pickle_base,  params_path, path_figs, thresholds)
 
         test(measures, path_test, hand_path, pickle_path, norms_path, pickle_base + row_path )
         

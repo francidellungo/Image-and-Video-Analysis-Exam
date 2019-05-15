@@ -147,14 +147,16 @@ def fingerRegistration(cnt, center_of_mass, p_list, m_list, c_list, v_list):
         (input)
         - cnt: 
             contour of hand
+        - center_of_mass:
+            center of mass coordinates
         - p_list: 
-            list of p points (or indexes of points)
+            list of finger points coordinates
         - m_list: 
-            list of p points (or indexes of points)
+            list of medium points coordinates
         - c_list: 
-            list of indexes of points
+            list of indexes of complementary valley points of the 5 finger points
         - v_list: 
-            list of indexes of points
+            list of indexes of valley points of the 5 finger points
 
         (output)
         - cnt: 
@@ -228,13 +230,17 @@ def orientationMap(cnt, r_idx):
     
 
     sigma = 10**-10
-    op = []
+    op_tan2 = []
     for i in range(len(cnt)):
         point = cnt[(r_idx + i)%len(cnt)]
-        o_value = 90 + np.arctan((cnt[r_idx][0][1] - point[0][1])/(cnt[r_idx][0][0] - point[0][0] + sigma))
-        op.append(o_value)
 
-    return op
+        if point[0][1] > cnt[r_idx][0][1]:
+            point[0][1] = cnt[r_idx][0][1]
+        otan2_value = np.pi/2 + np.arctan2([ cnt[r_idx][0][1] - point[0][1]], [cnt[r_idx][0][0] - point[0][0] + sigma])
+
+        op_tan2.append( np.rad2deg(float(otan2_value) ))
+
+    return op_tan2
 
 
 def waveletDecomposition(features_map):

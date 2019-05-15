@@ -107,7 +107,6 @@ def getFingerCoordinates(cnt, img_binary):
         # Find the convex hull related to contours of the binary image
         hull = cv2.convexHull(cnt, clockwise=True, returnPoints = False)
 
-        
         # obtain the 4 important defects from contourn and hull of hand image
         defects = getImportantDefect(cnt, hull)
 

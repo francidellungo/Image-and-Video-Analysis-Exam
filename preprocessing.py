@@ -72,8 +72,10 @@ def preprocessingHSV(img_bgr):
     """
 
     img = cv2.resize(img_bgr, None, fx=0.5, fy=0.5)
+
     img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
     h,s,v = cv2.split(img)
+    shape = b.shape
 
     # Smooth the three color channels one by one
     h = cv2.medianBlur(h,5)
@@ -88,28 +90,25 @@ def preprocessingHSV(img_bgr):
                     init_params='kmeans',
                     max_iter=300, n_init=4, random_state=10)
     gmm.fit(X.T)
-    # extract the cluster ID of each pixel
+
     Y = gmm.predict(X.T)
 
-    h_remap = copy.deepcopy(h.reshape(-1))
-    s_remap = copy.deepcopy(s.reshape(-1))
-    v_remap = copy.deepcopy(v.reshape(-1))
-    for k in range(num_clusters):
-        h_remap[ Y==k ] = gmm.means_[k,0]
-        s_remap[ Y==k ] = gmm.means_[k,1]
-        v_remap[ Y==k ] = gmm.means_[k,2]
+    mask_img = copy.deepcopy(h.reshape(-1))
 
-    img_remap = cv2.merge( (h_remap.reshape(v.shape),
-                            s_remap.reshape(v.shape),
-                            v_remap.reshape(v.shape)) )
+    unique, counts = np.unique(Y, return_counts=True)
+    dic = dict(zip(unique, counts))
+    
+    if dic[0] > dic[1]:
+        mask_img[ Y==0 ] = 0 
+        mask_img[ Y==1 ] = 1
+    else:
+        mask_img[ Y==0 ] = 1
+        mask_img[ Y==1 ] = 0
 
-    img_remap = cv2.cvtColor(img_remap, cv2.COLOR_HSV2BGR)
+    mask_img = mask_img.reshape(shape)
 
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(10, 10))
-
-    img_OPEN = cv2.morphologyEx(img_remap, cv2.MORPH_OPEN, kernel)
-
-    _, img_bin = cv2.threshold(cv2.cvtColor(img_OPEN, cv2.COLOR_BGR2GRAY), 127, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+    img_bin = cv2.morphologyEx(mask_img, cv2.MORPH_OPEN, kernel)
 
     return img_bin
 
@@ -239,14 +238,14 @@ def getOneHandContour(img_binary):
 def getHand(img_bgr):
     """ 
         GOAL:   
-            the funciton calculate on grey scale input image
-            a mask of the hand, and return the mask with also ellipse 
+            the function calculates on grey scale input image
+            a mask of the hand, and returns the mask with also ellipse 
             and some important params of ellipse.
 
         PARAMS:
             (input)
                 - img_grey: 
-                    the original gery scale image
+                    the original grey scale image
 
             (output)
                 - hand_mask: 
@@ -281,13 +280,14 @@ def getHand(img_bgr):
     # create a binary mask, where img is white(255) put 1, else let 0
     img_binary[img_binary == 255] = 1
 
+    
     # create a labeled mask of image where image is 1
-    labeled_foreground = (img_binary > 0).astype(int)
-
+    # labeled_foreground = (img_binary > 0).astype(int)
+    
     # skimage regionprops need labeled mask and binary mask
     # and return properties object with pixels property like
     # centroid, ellipse around pixels, ecc...
-    properties = regionprops(labeled_foreground, img_binary, coordinates='xy')
+    properties = regionprops(img_binary, coordinates='xy')
 
     # get center of mass of pixels (also called centroid)
     center_of_mass = properties[0].centroid[::-1]

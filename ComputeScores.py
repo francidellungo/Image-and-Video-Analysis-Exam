@@ -25,7 +25,7 @@ def allScores(scores, cod, measure):
         big_matrix = pairwise_distances( row_scores , metric=measure )
 
     else:
-        big_matrix = pairwise.chi2_kernel( row_scores ) 
+        big_matrix = 1 - pairwise.chi2_kernel( row_scores ) 
 
     big_centroids_indexes = allIndexes( num_imgs, big_matrix )
 
