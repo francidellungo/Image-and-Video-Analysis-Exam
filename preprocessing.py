@@ -75,7 +75,7 @@ def preprocessingHSV(img_bgr):
 
     img = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
     h,s,v = cv2.split(img)
-    shape = b.shape
+    shape = h.shape
 
     # Smooth the three color channels one by one
     h = cv2.medianBlur(h,5)
