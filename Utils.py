@@ -27,6 +27,40 @@ def draw(img, contour, cnt_color, point_lists, point_list_colors = [255,255,255]
 
 
 def rotateHand(shape, contour, angle, centre_of_mass, fingers_indexes, valley_indexes):
+	""" 
+		GOAL:   
+			the function rotate the contour of the hand mask, the coordinates of center of mass, 
+			finger points and valley points of the given angle 
+
+		PARAMS:
+			(input)
+				- shape: 
+					shape of the hand mask 
+				- contour:
+					contour of the hand mask
+				- angle:
+					angle in rad of which the image has to be rotated
+				- center_of_mass:
+					(x,y) coordinates of the center of mass
+				- fingers_indexes:
+					contour indexes of the 5 fingers (clockwise order starting from little finger)
+				- valley_indexes:
+					contour indexes of the valleys (same order as fingers indexes)
+
+
+			(output)
+				- hand_mask_rotated:
+					rotated hand mask
+				- finger_points_rotated:
+					new x,y coordinates of each point after rotation
+				- valley_points_rotated:
+					new x,y coordinates of valley points after rotation
+				- np.array(contour_rotated):
+					new contour array with rotated components
+				- np.add(centre_of_mass, (0, 50):
+					updated center of mass coordinates
+	"""
+
 	# create an empty black image
 	xm, ym = centre_of_mass
 	
@@ -49,7 +83,10 @@ def rotateHand(shape, contour, angle, centre_of_mass, fingers_indexes, valley_in
 	# print(np.array(list(valley_indexes)))
 	# print(np.array(list(fingers_indexes)).astype(int))
 
-	return hand_mask_rotated, [ contour_rotated[i] for i in fingers_indexes], [ contour_rotated[i] for i in valley_indexes], np.array(contour_rotated), np.add(centre_of_mass, (0, 50))
+	finger_points_rotated =  [ contour_rotated[i] for i in fingers_indexes]
+	valley_points_rotated = [ contour_rotated[i] for i in valley_indexes]
+
+	return hand_mask_rotated, finger_points_rotated, valley_points_rotated, np.array(contour_rotated), np.add(centre_of_mass, (0, 50))
 
 
 def getShape(contour, w_bias, h_bias):

@@ -8,8 +8,9 @@ from extractionShapeFeatures import *
 
 def getReferencePoint(contour, fingers_indexes, center_of_mass):
     """
-            coordinates of reference point are calculated as the point of intersection between the line
-            passing by center of mass and middle finger point and the end of the image (y)
+        The coordinates of reference point (xr, yr) are calculated as the point 
+        of intersection between the line passing by the center of mass and middle finger point
+        and the image contour in the opposite side.
     """
 
     middle_index = fingers_indexes[2]
