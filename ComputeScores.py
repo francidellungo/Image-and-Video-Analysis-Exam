@@ -139,11 +139,11 @@ def getDI( array ):
     return np.abs(m_g - m_i)/np.sqrt((ds_i ** 2 + ds_g ** 2)/2)
     
 
-def threshPerformanceMeasure(matrix_distances, num_imgs, centroid_indexes):
+def threshPerformanceMeasure(matrix_distances, num_imgs, centroid_indexes, scale):
 
-    performance_measure = np.zeros((100, 8))
+    performance_measure = np.zeros((scale, 8))
 
-    for i, thresh in enumerate(np.arange(0.0, 1.0, 0.01)):
+    for i, thresh in enumerate(np.linspace(0.0, 1.0, scale)):
             matrix_thresh = np.where(matrix_distances < thresh, 1, 0) 
             matrix_mask = np.zeros((matrix_thresh.shape[0], matrix_thresh.shape[1]))
             
@@ -155,9 +155,9 @@ def threshPerformanceMeasure(matrix_distances, num_imgs, centroid_indexes):
     return performance_measure
 
 
-def threshPerformanceParams(matrix_distances, num_imgs, centroid_indexes):
+def threshPerformanceParams(matrix_distances, num_imgs, centroid_indexes, scale):
 
-    performance_measure = threshPerformanceMeasure(matrix_distances, num_imgs, centroid_indexes)
+    performance_measure = threshPerformanceMeasure(matrix_distances, num_imgs, centroid_indexes, scale)
 
     # print(performance_measure)
 

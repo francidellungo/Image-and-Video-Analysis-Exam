@@ -212,7 +212,7 @@ def saveMatrix(scores, measures, pickle_base, norms_path, row_path):
                         np.save(pickle_base + 'mini_maxi/' + file_name + '_' + mea, (mini, maxi))
 
 
-def saveParams(scores, measures, num_imgs, pickle_base, params_path, norms_path):
+def saveParams(scores, measures, num_imgs, pickle_base, params_path, norms_path, scale):
 
         for cod, (measure, mea) in measures:
 
@@ -222,7 +222,7 @@ def saveParams(scores, measures, num_imgs, pickle_base, params_path, norms_path)
                         # 
                         centroids_indexes, matrix_distances_norm = np.load( pickle_base + norms_path + file_name + '_' + mea + '.npy' )
                         
-                        performance_params = threshPerformanceParams(matrix_distances_norm, num_imgs, centroids_indexes)
+                        performance_params = threshPerformanceParams(matrix_distances_norm, num_imgs, centroids_indexes, scale)
 
                         # matrixes.append(matrix_distances_norm)
 
@@ -262,9 +262,9 @@ def fusionScores(measures, num_imgs, pickle_base, norms_path):
                 np.save(pickle_base + 'mini_maxi/' + 'fusion_' + mea, (mini, maxi))
 
 
-def saveFigures(scores_reduct_all, measures, pickle_base, params_path, path_figs, thresholds):
+def saveFigures(scores_reduct_all, measures, pickle_base, params_path, path_figs, thresholds, scale):
 
-        h = 100
+        h = scale
         w = len(scores_reduct_all)
 
         perf_matrix = np.matrix( np.zeros(shape=( h * w, w * w )))
@@ -294,7 +294,7 @@ def saveFigures(scores_reduct_all, measures, pickle_base, params_path, path_figs
         
 def saveThreshFigure(h, w, measures, performance_params_list, path_figs, title, thresholds):
 
-        x = np.arange(0, 1.0, 0.01)
+        x = np.linspace(0, 1.0, h)
 
         # print(len(performance_params_list))
         EERs = dict()
@@ -353,6 +353,7 @@ def saveROCScoreFigure(h, w, column_score, title, measures):
         
         plt.xlabel('FAR')
         plt.ylabel('TAR')
+        plt.xscale('log')
         plt.title('ROC - '+title)
         plt.legend()
         plt.savefig( path_figs + 'ROC_'+ title + '.png')
@@ -378,6 +379,7 @@ def saveROCMeasureFigure(h, w, row_score, measure, scores_reduct_all):
         
         plt.xlabel('FAR')
         plt.ylabel('TAR')
+        plt.xscale('log')
         plt.title('ROC - '+measure)
         plt.legend()
         plt.savefig( path_figs + 'ROC_'+ measure + '.png')
@@ -518,12 +520,14 @@ def test(measures, path_test, hand_path, pickle_path , norms_path, row_path):
         print('TEST insuccess: ', fusion_insuccess)
 
 def main():
+
+        scale = 1000
         
         paths = os.listdir(hand_base + path_in)
 
         n_people, _ = countPeoplePhoto(hand_base + path_in)
 
-        # saveScores(n_people, 5, hand_base + path_in, hand_base, pickle_base + scores_path)
+        saveScores(n_people, 5, hand_base + path_in, hand_base, pickle_base + scores_path)
 
         g_scores = np.load(pickle_base + scores_path + 'geom.npy')
         d_scores = np.load(pickle_base + scores_path + 'distance.npy')
@@ -537,7 +541,7 @@ def main():
                 ( o_scores, ('o', 'orientation'))  
         ]
 
-        # saveMatrix(scores, measures, pickle_base, norms_path, row_path)
+        saveMatrix(scores, measures, pickle_base, norms_path, row_path)
 
         scores_reduct_all = [
                 ( 'g', 'geom'       ),
@@ -546,11 +550,11 @@ def main():
                 ( 'f', 'fusion'     )
         ]
 
-        # fusionScores(measures, num_imgs, pickle_base, norms_path)
+        fusionScores(measures, num_imgs, pickle_base, norms_path)
 
-        # saveParams(scores_reduct_all, measures, num_imgs, pickle_base, params_path, norms_path)
+        saveParams(scores_reduct_all, measures, num_imgs, pickle_base, params_path, norms_path, scale)
 
-        # saveFigures(scores_reduct_all, measures, pickle_base,  params_path, path_figs, thresholds)
+        saveFigures(scores_reduct_all, measures, pickle_base,  params_path, path_figs, thresholds, scale)
 
         test(measures, path_test, hand_path, pickle_path, norms_path, pickle_base + row_path )
         
