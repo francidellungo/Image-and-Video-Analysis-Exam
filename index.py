@@ -51,7 +51,7 @@ measures = [
             ( 0  ,  ( 'l1'       , 'l1' ) ),
             ( 0  ,  ('euclidean' , 'euc') ),
             ( 0  ,  ('cosine'    , 'cos') ),
-            ( 1  ,  ('chi-square', 'chi') )	
+            ( 1  ,  ('chi-square', 'chi') )
 ]
 
 
@@ -150,6 +150,12 @@ def saveScores(w, h, path_in, hand_base, scores_path):
                 # cv2.line(img_points_hand, (int(medium_points[0][0][0]), int(medium_points[0][0][1]) ) , (int(medium_points[3][0][0]), int(medium_points[3][0][1]) ) , [255,255,255])
                 # cv2.line(img_points_hand, (int(medium_points[3][0][0]), int(medium_points[3][0][1]) ) , (int(medium_points[4][0][0]), int(medium_points[4][0][1]) ) , [255,255,255])
 
+
+                # to extract geometrical features we used non rotated fingers 
+                _, geom_features = extractGeometricalFeatures(r_based_contour[r_based_fingers_indexes], medium_points)
+
+                # print("n geom features: ",len(geom_features))
+
                 updated_contour = fingerRegistration(copy.deepcopy(r_based_contour), center_of_mass, r_based_contour[r_based_fingers_indexes], medium_points, comp_valley_indexes, valley_indexes)
 
                         # draw new contour to image
@@ -157,11 +163,6 @@ def saveScores(w, h, path_in, hand_base, scores_path):
 
                 # cv2.imwrite(hand_base + path_pts + name_img, img_points_hand)
 
-                # to extract geometrical features we used non rotated fingers 
-                _, geom_features = extractGeometricalFeatures(r_based_contour[r_based_fingers_indexes], medium_points)
-
-                # print("n geom features: ",len(geom_features))
-                
                 # to extract shape features updated contours are used
                 # print(r_point)
 

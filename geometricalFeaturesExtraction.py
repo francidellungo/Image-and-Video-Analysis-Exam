@@ -43,9 +43,9 @@ def extractGeometricalFeatures(finger_points, medium_points):
     distances.append(dist_7)
     
     # calculate geometrical feature vector
-    geom_feature = constructGeometricalFeatureVector(distances)
+    geom_features = constructGeometricalFeatureVector(distances)
 
-    return distances, geom_feature
+    return distances, geom_features
 
 
 def constructGeometricalFeatureVector(distances):

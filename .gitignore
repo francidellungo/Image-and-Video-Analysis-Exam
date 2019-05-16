@@ -1,6 +1,6 @@
 # OUR stuff folders
 
-hands
+# hands
 #     masks
 #     rotates
 #     points
@@ -8,7 +8,7 @@ hands
 pickles
 # !pickles/scores
 figures
-tests
+# tests
 
 aio.py
 
