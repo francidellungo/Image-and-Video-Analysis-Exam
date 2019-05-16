@@ -220,7 +220,7 @@ def saveParams(scores, measures, num_imgs, pickle_base, params_path, norms_path,
                 # matrixes = []
 
                 for l, file_name in scores:
-                        # 
+                        
                         centroids_indexes, matrix_distances_norm = np.load( pickle_base + norms_path + file_name + '_' + mea + '.npy' )
                         
                         performance_params = threshPerformanceParams(matrix_distances_norm, num_imgs, centroids_indexes, scale)
@@ -304,7 +304,7 @@ def saveThreshFigure(h, w, measures, performance_params_list, path_figs, title, 
                 performance_params = performance_params_list[np.ix_(range( i * h, h * (i+1)), range( w ))]
 
                 # print(len(performance_params))
-        
+                
                 y_FAR = performance_params[:,0]
                 # print(len(y_FAR))
                 y_FRR = performance_params[:,1]
@@ -454,10 +454,15 @@ def test(measures, path_test, hand_path, pickle_path , norms_path, row_path):
         DD = np.load( path_test + pickle_path + scores_path + 'distance.npy' )            
         OO = np.load( path_test + pickle_path + scores_path + 'orientation.npy' )     
 
-        fusion_success = 0
-        fusion_insuccess = 0
-        verification_success = 0
-        verification_insuccess = 0
+        centr_fusion_success = 0
+        centr_fusion_insuccess = 0
+        centr_verification_success = 0
+        centr_verification_insuccess = 0
+
+        meanshape_fusion_success = 0
+        meanshape_fusion_insuccess = 0
+        meanshape_verification_success = 0
+        meanshape_verification_insuccess = 0
 
 
         for i, name_img in enumerate(tests):
@@ -469,16 +474,16 @@ def test(measures, path_test, hand_path, pickle_path , norms_path, row_path):
 
                 for cod, (measure, mea) in measures:
                         
-                        (r_g, ci_g)     = np.load( row_path + 'geom_' + mea + '.npy' )                # g_centroids_indexes
+                        (r_g, ci_g)     = np.load( row_path + 'geom_' + mea + '.npy' )                
                         (g_mn, g_mx)    = np.load(pickle_base + 'mini_maxi/' + 'geom_' + mea + '.npy')
 
-                        (r_d, ci_d)     = np.load( row_path + 'distance_' + mea + '.npy' )            # d_centroids_indexes
+                        (r_d, ci_d)     = np.load( row_path + 'distance_' + mea + '.npy' )            
                         (d_mn, d_mx)    = np.load(pickle_base + 'mini_maxi/' + 'distance_' + mea + '.npy')
 
-                        (r_o, ci_o)     = np.load( row_path + 'orientation_' + mea + '.npy' )         # o_centroids_indexes
+                        (r_o, ci_o)     = np.load( row_path + 'orientation_' + mea + '.npy' )         
                         (o_mn, o_mx)    = np.load(pickle_base + 'mini_maxi/' + 'orientation_' + mea + '.npy')
 
-                        (z_big_centroids_indexes, _) = np.load(pickle_base + norms_path + 'fusion_' + mea + '.npy')
+                        (_, _) = np.load(pickle_base + norms_path + 'fusion_' + mea + '.npy')
                         (f_mn, f_mx)    = np.load(pickle_base + 'mini_maxi/' + 'fusion_' + mea + '.npy')
 
                         g, d, o = GG[0][i], DD[0][i], OO[0][i]
@@ -487,11 +492,11 @@ def test(measures, path_test, hand_path, pickle_path , norms_path, row_path):
                         d_centroid = ci_d[np.ix_(r_d)]
                         o_centroid = ci_o[np.ix_(r_o)]
 
-                        _, g_big_matrix, g_big_centroids_indexes = allScores(np.array([np.append(g_centroid, [g], axis=0)]), cod, measure)
+                        _, g_big_matrix, _ = allScores(np.array([np.append(g_centroid, [g], axis=0)]), cod, measure)
                         g_norm = matrixNormalizationMiniMaxi(g_big_matrix, g_mn, g_mx)
-                        _, d_big_matrix, d_big_centroids_indexes = allScores(np.array([np.append(d_centroid, [d], axis=0)]), cod, measure)
+                        _, d_big_matrix, _ = allScores(np.array([np.append(d_centroid, [d], axis=0)]), cod, measure)
                         d_norm = matrixNormalizationMiniMaxi(d_big_matrix, d_mn, d_mx)
-                        _, o_big_matrix, o_big_centroids_indexes = allScores(np.array([np.append(o_centroid, [o], axis=0)]), cod, measure)
+                        _, o_big_matrix, _ = allScores(np.array([np.append(o_centroid, [o], axis=0)]), cod, measure)
                         o_norm = matrixNormalizationMiniMaxi(o_big_matrix, o_mn, o_mx)
                                         
                         g_dist_norm = g_norm[-1]
@@ -514,21 +519,72 @@ def test(measures, path_test, hand_path, pickle_path , norms_path, row_path):
 
                         if len([dataset[idx] for idx in f_maybe]) > 0:
                                 if person_idx == dataset[f_maybe[0]]:
-                                        fusion_success = fusion_success + 1
+                                        centr_fusion_success = centr_fusion_success + 1
                                 else:
-                                        fusion_insuccess = fusion_insuccess + 1
+                                        centr_fusion_insuccess = centr_fusion_insuccess + 1
 
                                 if person_idx in  [dataset[idx] for idx in f_maybe]:
-                                        verification_success = verification_success + 1
+                                        centr_verification_success = centr_verification_success + 1
                                 else:
-                                        verification_insuccess = verification_insuccess + 1
+                                        centr_verification_insuccess = centr_verification_insuccess + 1
                         else:
                                 print(person_idx, ' not found in dataset. ')
 
-        print('TEST identification success: ', fusion_success)
-        print('TEST identification insuccess: ', fusion_insuccess)
-        print('TEST verification success: ', verification_success)
-        print('TEST verification insuccess: ', verification_insuccess)
+                        # print(ci_g[0], ci_g[1], ci_g[3])
+
+                        g_meanshape = [ np.mean(np.array(ci_g[ idx*5 : (idx+1)*5 ] ), axis=0 )for idx in range(len(r_g))]
+                        # print(g_meanshape)
+                        d_meanshape = [ np.mean(np.array(ci_d[ idx*5 : (idx+1)*5 ] ), axis=0 )for idx in range(len(r_g))]
+                        o_meanshape = [ np.mean(np.array(ci_o[ idx*5 : (idx+1)*5 ] ), axis=0 )for idx in range(len(r_g))]
+
+                        _, g_big_matrix, _ = allScores(np.array([np.append(g_meanshape, [g], axis=0)]), cod, measure)
+                        g_norm = matrixNormalizationMiniMaxi(g_big_matrix, g_mn, g_mx)
+                        _, d_big_matrix, _ = allScores(np.array([np.append(d_meanshape, [d], axis=0)]), cod, measure)
+                        d_norm = matrixNormalizationMiniMaxi(d_big_matrix, d_mn, d_mx)
+                        _, o_big_matrix, _ = allScores(np.array([np.append(o_meanshape, [o], axis=0)]), cod, measure)
+                        o_norm = matrixNormalizationMiniMaxi(o_big_matrix, o_mn, o_mx)
+                                        
+                        g_dist_norm = g_norm[-1]
+                        d_dist_norm = d_norm[-1]
+                        o_dist_norm = o_norm[-1]
+
+                        pd = np.multiply(d_dist_norm, o_dist_norm)
+                        f_dist = np.minimum(pd, g_dist_norm)
+                        f_dist_norm = matrixNormalizationMiniMaxi(f_dist, f_mn, f_mx)
+
+                        g_maybe = [x[0] for x in sorted([ [x, y] for x, y in enumerate( g_dist_norm[:-1] ) if y < EERs_g[mea][0]], key=itemgetter(1))]
+                        d_maybe = [x[0] for x in sorted([ [x, y] for x, y in enumerate( d_dist_norm[:-1] ) if y < EERs_d[mea][0]], key=itemgetter(1))]
+                        o_maybe = [x[0] for x in sorted([ [x, y] for x, y in enumerate( o_dist_norm[:-1] ) if y < EERs_o[mea][0]], key=itemgetter(1))]
+                        f_maybe = [x[0] for x in sorted([ [x, y] for x, y in enumerate( f_dist_norm[:-1] ) if y < EERs_f[mea][0]], key=itemgetter(1))] 
+
+                        # print('TEST ' , person_idx , ' geom ' , [dataset[idx] for idx in g_maybe] , ' ', mea)
+                        # print('TEST ' , person_idx , ' dMap ' , [dataset[idx] for idx in d_maybe] , ' ', mea)
+                        # print('TEST ' , person_idx , ' oMap ' , [dataset[idx] for idx in o_maybe] , ' ', mea)
+                        print('TEST ' , person_idx , ' fusion ' , [dataset[idx] for idx in f_maybe] , ' ', mea)
+
+                        if len([dataset[idx] for idx in f_maybe]) > 0:
+                                if person_idx == dataset[f_maybe[0]]:
+                                        meanshape_fusion_success = meanshape_fusion_success + 1
+                                else:
+                                        meanshape_fusion_insuccess = meanshape_fusion_insuccess + 1
+
+                                if person_idx in  [dataset[idx] for idx in f_maybe]:
+                                        meanshape_verification_success = meanshape_verification_success + 1
+                                else:
+                                        meanshape_verification_insuccess = meanshape_verification_insuccess + 1
+                        else:
+                                print(person_idx, ' not found in dataset. ')
+
+        print('TEST identification success   (centroid): ', centr_fusion_success)
+        print('TEST identification insuccess (centroid): ', centr_fusion_insuccess)
+        print('TEST verification success     (centroid): ', centr_verification_success)
+        print('TEST verification insuccess   (centroid): ', centr_verification_insuccess)
+
+        print('TEST identification success   (meanshape): ', meanshape_fusion_success)
+        print('TEST identification insuccess (meanshape): ', meanshape_fusion_insuccess)
+        print('TEST verification success     (meanshape): ', meanshape_verification_success)
+        print('TEST verification insuccess   (meanshape): ', meanshape_verification_insuccess)
+
 
 def main():
 
