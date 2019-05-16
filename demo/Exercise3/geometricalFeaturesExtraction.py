@@ -1,3 +1,10 @@
+import imageio as iio
+import cv2
+import math
+import numpy as np
+import os
+
+
 def extractGeometricalFeatures(finger_points, medium_points):
     """ 
         GOAL:   
@@ -20,28 +27,28 @@ def extractGeometricalFeatures(finger_points, medium_points):
                     geometrical feature vector
     """
 
-    # distances = []
-    # # distances are calculated starting from thumb finger
-    # for i in range(4,-1, -1):
-    #     # print(i, finger_points[i][0], medium_points[i])
-    #     dist = math.hypot(finger_points[i][0][0] - medium_points[i][0][0], finger_points[i][0][1] - medium_points[i][0][1]) # Linear distance
-    #     distances.append(dist)
-    # # dist_6 : distance between 3-medium_point (index finger) and 4-medium_point (thumb finger)
-    # x_med_point_3,  y_med_point_3 = medium_points[3][0][0], medium_points[3][0][1]
-    # x_med_point_4,  y_med_point_4 = medium_points[4][0][0], medium_points[4][0][1]
+    distances = []
+    # distances are calculated starting from thumb finger
+    for i in range(4,-1, -1):
+        # print(i, finger_points[i][0], medium_points[i])
+        dist = math.hypot(finger_points[i][0][0] - medium_points[i][0][0], finger_points[i][0][1] - medium_points[i][0][1]) # Linear distance
+        distances.append(dist)
+    # dist_6 : distance between 3-medium_point (index finger) and 4-medium_point (thumb finger)
+    x_med_point_3,  y_med_point_3 = medium_points[3][0][0], medium_points[3][0][1]
+    x_med_point_4,  y_med_point_4 = medium_points[4][0][0], medium_points[4][0][1]
 
-    # dist_6 = math.hypot(x_med_point_3 - x_med_point_4, y_med_point_3- y_med_point_4)
-    # distances.append(dist_6)
+    dist_6 = math.hypot(x_med_point_3 - x_med_point_4, y_med_point_3- y_med_point_4)
+    distances.append(dist_6)
 
-    # # dist_7 : distance between 3-medium_point (index finger) and 0-medium_point (little finger)
-    # x_med_point_3,  y_med_point_3 = medium_points[3][0][0], medium_points[3][0][1]
-    # x_med_point_0,  y_med_point_0 = medium_points[0][0][0], medium_points[0][0][1]
+    # dist_7 : distance between 3-medium_point (index finger) and 0-medium_point (little finger)
+    x_med_point_3,  y_med_point_3 = medium_points[3][0][0], medium_points[3][0][1]
+    x_med_point_0,  y_med_point_0 = medium_points[0][0][0], medium_points[0][0][1]
 
-    # dist_7 = math.hypot(x_med_point_3 - x_med_point_0, y_med_point_3- y_med_point_0)
-    # distances.append(dist_7)
+    dist_7 = math.hypot(x_med_point_3 - x_med_point_0, y_med_point_3- y_med_point_0)
+    distances.append(dist_7)
     
-    # # calculate geometrical feature vector
-    # geom_features = constructGeometricalFeatureVector(distances)
+    # calculate geometrical feature vector
+    geom_features = constructGeometricalFeatureVector(distances)
 
     return distances, geom_features
 
@@ -60,10 +67,10 @@ def constructGeometricalFeatureVector(distances):
                 - geom_feature:
                     list of geometrical features
     """
-    # geom_features = []
-    # for i in range(len(distances)):
-    #     for j in range(i+1, len(distances)):
-    #         geom_features.append(distances[i]/distances[j])
+    geom_features = []
+    for i in range(len(distances)):
+        for j in range(i+1, len(distances)):
+            geom_features.append(distances[i]/distances[j])
 
     return geom_features
 

@@ -165,7 +165,6 @@ def saveScores(w, h, path_in, hand_base, scores_path):
 
                 # to extract shape features updated contours are used
                 # print(r_point)
-
                 distance_features, orientation_features, dm_u, om_u  = extractShapeFeatures(updated_contour, 0)
                 # print("n dist, orient features: ",len(distance_features), len(orientation_features))
 
@@ -177,7 +176,7 @@ def saveScores(w, h, path_in, hand_base, scores_path):
                 plt.savefig(hand_base + dist_path + new_name_img + '_dmap_update.png')
                 plt.close()
 
-                plt.plot(range(len(updated_contour)), om_u, 'b--', label="distance map")
+                plt.plot(range(len(updated_contour)), om_u, 'b--', label="orientation map")
                 # print(r_based_fingers_indexes, dm)
                 # plt.scatter(r_based_fingers_indexes, [ om_u[idx] for idx in r_based_fingers_indexes], c='r', label='finger points')
                 # plt.scatter(valley_indexes, [ om_u[idx] for idx in valley_indexes], c='g', label='valley points')
