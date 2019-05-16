@@ -1,19 +1,17 @@
 from fingerCoordinates import *
-from preprocessing import *
-from fingerFeaturePoints import *
-from extractionShapeFeatures import *
 from Utils import *
-from geometricalFeaturesExtraction import *
 from ComputeScores import *
 import matplotlib.pyplot as plt
 import copy
 import json
 from operator import itemgetter
 
+from Exercise1.preprocessingLAB import preprocessingHSV
+from Exercise2.findFingerLAB import getHand, getFingerCoordinates
+from Exercise3.geometricalFeaturesExtraction import extractGeometricalFeatures
 
-# 
+hand_base = '../hands/'
 
-hand_base = './hands/'
 path_in = 'dataset/'
 path_out = 'masks/'
 path_rot = 'rotates/'

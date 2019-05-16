@@ -1,6 +1,10 @@
 import numpy as np
 import math
-from pywt import wavedec #, families
+from pywt import wavedec
+
+
+from Exercise4.shapeFeaturesExtraction import distanceMap, orientationMap
+
 
 mu = 10**(-10)
 
@@ -181,70 +185,6 @@ def fingerRegistration(cnt, center_of_mass, p_list, m_list, c_list, v_list):
     
     return cnt
 
-
-def distanceMap(cnt, r_idx):
-    """ 
-    GOAL:   
-        generate a distance map from each points on contour
-        and reference point r, in clockwise orientation.
-
-    PARAMS:
-        (input)
-        - cnt: 
-            contour of hand
-        - r_idx: 
-            index of reference point on the contour
-
-        (output)
-        - dp: 
-            distance map of each points in clockwise orientation
-    """
-    # print('distanceMap: ', r_idx)
-
-    dp = []
-    for point in cnt:
-        d_value = math.sqrt((cnt[r_idx][0][1] - point[0][1])**2 + (cnt[r_idx][0][0] - point[0][0])**2)
-        dp.append(d_value)
-    max_value = np.max(dp)
-    
-    print(max_value)
-    # normalize distance map 
-    dp = [i/max_value for i in dp]
-    print(np.max(dp))
-
-    return dp
-
-def orientationMap(cnt, r_idx):
-    """ 
-    GOAL:   
-        generate a orientation map from each points on contour
-        and reference point r, in clockwise orientation.
-
-    PARAMS:
-        (input)
-        - cnt: 
-            contour of hand
-        - r_idx: 
-            index of reference point on the contour
-
-        (output)
-        - op: 
-            orientation map of each points in clockwise orientation
-    """
-    
-
-    sigma = 10**-10
-    op_tan2 = []
-    for i in range(len(cnt)):
-        point = cnt[(r_idx + i)%len(cnt)]
-
-        if point[0][1] > cnt[r_idx][0][1]:
-            point[0][1] = cnt[r_idx][0][1]
-        otan2_value = np.pi/2 + np.arctan2([ cnt[r_idx][0][1] - point[0][1]], [cnt[r_idx][0][0] - point[0][0] + sigma])
-
-        op_tan2.append( np.rad2deg(float(otan2_value) ))
-
-    return op_tan2
 
 
 def waveletDecomposition(features_map):

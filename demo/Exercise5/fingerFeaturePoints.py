@@ -4,7 +4,7 @@ from scipy.spatial.distance import cdist
 from scipy.interpolate import interp1d
 from numpy.linalg import norm
 from extractionShapeFeatures import *
-
+from Exercise2.findFingerLAB getComplementaryValleyPoints, getMediumFingerPoint
 
 def getReferencePoint(contour, fingers_indexes, center_of_mass):
     """
@@ -35,42 +35,6 @@ def getReferencePoint(contour, fingers_indexes, center_of_mass):
 
     return r_point, r_index
 
-
-def getComplementaryValleyPoints(cnt_length, valley_indexes, fingers_indexes):
-    
-    valley_indexes.insert(0, valley_indexes[0])
-
-    complementary_valley_indexes = [( 2 * p_index - v_index ) % cnt_length for v_index, p_index in zip(valley_indexes[::-1], fingers_indexes[::-1])]
-            
-    app = complementary_valley_indexes[-1]
-    complementary_valley_indexes[-1] = valley_indexes[0]
-    valley_indexes[0] = app
-    complementary_valley_indexes = complementary_valley_indexes[::-1]
-
-    all_valley = []
-    all_valley.append(valley_indexes[0])
-    for x, o in zip(valley_indexes[1:], complementary_valley_indexes[:-1]):
-        app = [x, o]
-        app.sort(key = lambda x: x, reverse= True)
-        all_valley.append(app[0])
-        all_valley.append(app[1])
-
-    all_valley.append(complementary_valley_indexes[-1])
-
-    valley_indexes = all_valley[0::2]
-    complementary_valley_indexes = all_valley[1::2]
-
-    return complementary_valley_indexes, valley_indexes
-
-
-def getMediumFingerPoint(valley_points, complementary_valley_points):
-    medium_points = []
-
-    for v_point, c_v_point in zip(valley_points, complementary_valley_points):
-        app = [v_point, c_v_point]
-        medium_points.append(np.mean(app, axis = 0).tolist())
-
-    return medium_points
 
 def calculateMediumPoints(contour, valley_indexes, fingers_indexes):
 
