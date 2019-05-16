@@ -203,10 +203,14 @@ def distanceMap(cnt, r_idx):
 
     dp = []
     for point in cnt:
-        # point = cnt[i] # cnt[(r_idx + i)%len(cnt)]
-        # print(cnt[r_idx][0][0][0], point[0])
-        d_value = math.sqrt((cnt[r_idx][0][1] - point[0][1])**2 + (cnt[r_idx][0][0] - point[0][0])**2)  
+        d_value = math.sqrt((cnt[r_idx][0][1] - point[0][1])**2 + (cnt[r_idx][0][0] - point[0][0])**2)
         dp.append(d_value)
+    max_value = np.max(dp)
+    
+    print(max_value)
+    # normalize distance map 
+    dp = [i/max_value for i in dp]
+    print(np.max(dp))
 
     return dp
 
