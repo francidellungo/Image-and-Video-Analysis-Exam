@@ -10,6 +10,9 @@ import copy
 import json
 from operator import itemgetter
 
+
+# 
+
 hand_base = './hands/'
 path_in = 'dataset/'
 path_out = 'masks/'
@@ -177,7 +180,7 @@ def saveScores(w, h, path_in, hand_base, scores_path):
                 plt.savefig(hand_base + dist_path + new_name_img + '_dmap_update.png')
                 plt.close()
 
-                plt.plot(range(len(updated_contour)), om_u, 'b--', label="orientation map")
+                plt.plot(range(len(updated_contour)), om_u, 'b--', label="distance map")
                 # print(r_based_fingers_indexes, dm)
                 # plt.scatter(r_based_fingers_indexes, [ om_u[idx] for idx in r_based_fingers_indexes], c='r', label='finger points')
                 # plt.scatter(valley_indexes, [ om_u[idx] for idx in valley_indexes], c='g', label='valley points')
@@ -341,7 +344,6 @@ def saveROCScoreFigure(h, w, column_score, title, measures):
                 'b'
         ]
 
-        
 
         for i, (_, (measure, _))  in enumerate(measures):
                 performance_params = column_score[np.ix_(range( i * h, h * (i+1)), range( w ))]
