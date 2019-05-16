@@ -20,12 +20,12 @@ def preprocessingHSV(img_bgr):
     """ 
         GOAL:   
             the funciton make the preprocessing applying
-            some filter, dilation, erosion and closure.
+            gaussian mixture and an open with.
 
         PARAMS:
             (input)
-                - img_grey: 
-                    original grey scale image
+                - img_bgr: 
+                    original color scale image
 
             (output)
                 - img_binary:

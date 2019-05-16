@@ -220,7 +220,7 @@ def saveParams(scores, measures, num_imgs, pickle_base, params_path, norms_path,
                 # matrixes = []
 
                 for l, file_name in scores:
-                        # 
+                        
                         centroids_indexes, matrix_distances_norm = np.load( pickle_base + norms_path + file_name + '_' + mea + '.npy' )
                         
                         performance_params = threshPerformanceParams(matrix_distances_norm, num_imgs, centroids_indexes, scale)
@@ -304,7 +304,7 @@ def saveThreshFigure(h, w, measures, performance_params_list, path_figs, title, 
                 performance_params = performance_params_list[np.ix_(range( i * h, h * (i+1)), range( w ))]
 
                 # print(len(performance_params))
-        
+                
                 y_FAR = performance_params[:,0]
                 # print(len(y_FAR))
                 y_FRR = performance_params[:,1]
