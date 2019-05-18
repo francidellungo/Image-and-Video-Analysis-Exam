@@ -2,6 +2,7 @@ from fingerCoordinates import *
 from preprocessing import *
 from fingerFeaturePoints import *
 from extractionShapeFeatures import *
+from AA_saveScores import saveScores
 from Utils import *
 from geometricalFeaturesExtraction import *
 from ComputeScores import *
@@ -9,6 +10,8 @@ import matplotlib.pyplot as plt
 import copy
 import json
 from operator import itemgetter
+
+NUM_IMGS = 5
 
 hand_base = './hands/'
 path_in = 'dataset/'
@@ -53,169 +56,6 @@ measures = [
             ( 0  ,  ('cosine'    , 'cos') ),
             ( 1  ,  ('chi-square', 'chi') )
 ]
-
-
-def saveScores(w, h, path_in, hand_base, scores_path):
-
-        paths = os.listdir(path_in)
-
-        paths.sort()
-
-        print(paths)
-
-        # matrices with scores for all people and all imgs ( features_scores[person][img] )
-
-        geom_scores = [[[] for x in range(w)] for y in range(h)]
-        distance_scores = [[[] for x in range(w)] for y in range(h)]
-        orientation_scores = [[[] for x in range(w)] for y in range(h)]
-        
-        # print('\n\n n pers:', h, 'n images: ', w)
-
-        for i, name_img in enumerate(paths):
-                _ = None
-                
-                # name_img = '022_4.JPG'
-                print('\n \n ---> ' ,name_img)
-                new_name_img = name_img.split('.')[0]
-                person_idx, img_idx = new_name_img.split("_")[:]
-                
-                print(person_idx, img_idx)
-                
-                # read image in a grey scale way
-                img_bgr = cv2.imread(path_in + name_img)
-
-                # apply the preprocessing to the grey scale image
-                # hand_mask, contour, center_of_mass, _  = getHand( img_grey )
-                hand_mask, contour, center_of_mass, ellipse  = getHand( img_bgr )
-                # print("getHand: ")
-
-                # save image in output path    
-                cv2.imwrite(hand_base + path_out + name_img, hand_mask)
-                # cv2.imwrite(hand_base + path_ell + name_img, ellipse)
-                
-                """ img_points_hand = cv2.imread('./hands/rotates/001_1.JPG')
-                img_points_hand = draw(_, contour, (0, 255, 0), [], [255,0,0], _)
-                img_points_hand = draw(img_points_hand, [], _, [[center_of_mass]], [0,0,255], _)
-                img_points_hand = draw(img_points_hand, [], _, [[[321, 38]]], [0,0,255], _)
-                cv2.imwrite(hand_base + path_ell + name_img, img_points_hand) """
-
-                # returns ordinated points starting from little finger(0)
-                finger_points, valley_points, fingers_indexes, valley_indexes = getFingerCoordinates(contour, hand_mask)
-
-                # rotate based on middle finger point to center of mass axes
-                hand_mask_rotated, finger_points, valley_points, contour, center_of_mass = rotateHand(hand_mask.shape, contour, getAngle(finger_points[2],[list(center_of_mass)]), center_of_mass, fingers_indexes, valley_indexes)
-
-                        # save image in output path    
-                # cv2.imwrite(hand_base + path_rot + name_img, hand_mask_rotated)
-
-                
-                        # draw contour and finger points to image
-                # img_points_hand = draw(_, contour, (0, 255, 0), finger_points, [255,0,0], _)
-                r_point_normal, r_index = getReferencePoint(contour, fingers_indexes, center_of_mass)
-
-                # img_points_hand = draw(_, contour, (0, 255, 0), finger_points, [255,0,0], _)
-                # img_points_hand = draw(img_points_hand, [], _, valley_points, [0,0,255], _)
-                # img_points_hand = draw(img_points_hand, [], _, [[center_of_mass]], [0,0,255], _)
-                # cv2.line(img_points_hand, (int(center_of_mass[0]), 0),(int(center_of_mass[0]), img_points_hand.shape[0]), [0,0,255])
-                # img_points_hand = draw(img_points_hand, [], _, [r_point_normal], [255,0,0], [0,0,255])
-                # img_points_hand = draw(img_points_hand, [], _, [[center_of_mass]], [0,0,255], _)
-                # cv2.line(img_points_hand, (int(center_of_mass[0]), 0),(int(center_of_mass[0]), img_points_hand.shape[0]), [0,0,255])
-                # img_points_hand = draw(img_points_hand, [], _, [r_point_normal], [255,0,0], [0,0,255])
-                # cv2.imwrite(hand_base + path_ell + name_img, img_points_hand)
-
-                # img_points_hand = draw(_, contour, (0, 255, 0), [], [255,0,0], _)
-                
-                # print('update contour')
-                r_point, r_based_contour, r_based_valley_indexes, r_based_fingers_indexes = updateContour(contour, valley_indexes, fingers_indexes, r_index)
-
-                # draw center of mass to image
-                # img_points_hand = draw(img_points_hand, [], _, [[center_of_mass]], [0,0,255], _)
-
-                # valley_indexes has 5 points updating after complementary search
-                medium_points, valley_indexes, comp_valley_indexes = calculateMediumPoints(r_based_contour, r_based_valley_indexes, r_based_fingers_indexes)
-
-                        # draw medium to image
-                        # print('medium')
-                # img_points_hand = draw(img_points_hand, [], _, medium_points, [255,255,255], _)
-                        # draw valley to image
-                        # print('valley')
-                # img_points_hand = draw(img_points_hand, [], _, r_based_contour[valley_indexes], [0,0,255], _)
-                        # draw complementary valley to image
-                        # print('complementary valley')
-                # img_points_hand = draw(img_points_hand, [], _, r_based_contour[comp_valley_indexes], [0,255,255], _)
-                # for f, m in zip(r_based_contour[r_based_fingers_indexes], medium_points):
-                #         # (int(f[0][0]), int(f[0][1])), tuple(int(m[0][0]), int(m[0][1])
-                #         cv2.line(img_points_hand, (int(f[0][0]), int(f[0][1])), (int(m[0][0]), int(m[0][1])), [255,255,255])
-                
-                # cv2.line(img_points_hand, (int(medium_points[0][0][0]), int(medium_points[0][0][1]) ) , (int(medium_points[3][0][0]), int(medium_points[3][0][1]) ) , [255,255,255])
-                # cv2.line(img_points_hand, (int(medium_points[3][0][0]), int(medium_points[3][0][1]) ) , (int(medium_points[4][0][0]), int(medium_points[4][0][1]) ) , [255,255,255])
-
-
-                # to extract geometrical features we used non rotated fingers 
-                _, geom_features = extractGeometricalFeatures(r_based_contour[r_based_fingers_indexes], medium_points)
-                print(geom_features)
-
-                # print("n geom features: ",len(geom_features))
-
-                updated_contour = fingerRegistration(copy.deepcopy(r_based_contour), center_of_mass, r_based_contour[r_based_fingers_indexes], medium_points, comp_valley_indexes, valley_indexes)
-
-                        # draw new contour to image
-                # img_points_hand = draw(img_points_hand, updated_contour, (255, 255, 255), [], _, _)
-
-                # cv2.imwrite(hand_base + path_pts + name_img, img_points_hand)
-
-                # to extract shape features updated contours are used
-                # print(r_point)
-                distance_features, orientation_features, dm_u, om_u  = extractShapeFeatures(updated_contour, 0)
-                print("n dist, orient features: ",np.array(distance_features).shape, np.array(orientation_features).shape)
-
-                plt.plot(range(len(updated_contour)), dm_u, 'b--', label="distance map")
-                        # print(r_based_fingers_indexes, dm)
-                # plt.scatter(r_based_fingers_indexes, [ dm_u[idx] for idx in r_based_fingers_indexes], c='r', label='finger points')
-                # plt.scatter(valley_indexes, [ dm_u[idx] for idx in valley_indexes], c='g', label='valley points')
-                # plt.scatter(comp_valley_indexes, [ dm_u[idx] for idx in comp_valley_indexes] , c='y', label='valley points')
-                plt.savefig(hand_base + dist_path + new_name_img + '_dmap_update.png')
-                plt.close()
-
-                plt.plot(range(len(updated_contour)), om_u, 'b--', label="orientation map")
-                # print(r_based_fingers_indexes, dm)
-                # plt.scatter(r_based_fingers_indexes, [ om_u[idx] for idx in r_based_fingers_indexes], c='r', label='finger points')
-                # plt.scatter(valley_indexes, [ om_u[idx] for idx in valley_indexes], c='g', label='valley points')
-                # plt.scatter(comp_valley_indexes, [ om_u[idx] for idx in comp_valley_indexes] , c='y', label='valley points')
-                plt.savefig(hand_base + dist_path + new_name_img + '_omap_update.png')
-                plt.close()
-
-                geom_scores[i % h][int(i / h)] = geom_features
-                distance_scores[i % h][int(i / h)] = distance_features
-                orientation_scores[i % h][int(i / h)] = orientation_features
-
-        geom_scores = np.array(geom_scores)
-        distance_scores = distance_scores
-        orientation_scores = orientation_scores
-
-        d_shape = copy.deepcopy(distance_scores)
-        o_shape = copy.deepcopy(orientation_scores)
-
-        for i in range(h):
-                for j in range(w):
-                        d_shape[i][j] = len(d_shape[i][j])
-                        o_shape[i][j] = len(o_shape[i][j])
-
-        d_coeff = np.min(np.amin(d_shape,axis=0))
-        print('d_coeff', d_coeff)
-        for i in range(h):
-                for j in range(w):
-                        distance_scores[i][j] = distance_scores[i][j][:d_coeff]
-
-        o_coeff = np.min(np.amin(o_shape,axis=0))
-        print('o_coeff', o_coeff)
-        for i in range(h):
-                for j in range(w):
-                        orientation_scores[i][j] = orientation_scores[i][j][:o_coeff]
-                        
-        np.save( scores_path + 'geom', geom_scores)
-        np.save( scores_path + 'distance', distance_scores)
-        np.save( scores_path + 'orientation', orientation_scores)
 
 
 def saveMatrix(scores, measures, pickle_base, norms_path, row_path):
@@ -614,14 +454,11 @@ def main():
 
         n_people, _ = countPeoplePhoto(hand_base + path_in)
 
-        saveScores(n_people, 5, hand_base + path_in, hand_base, pickle_base + scores_path)
-
-        g_scores = np.load(pickle_base + scores_path + 'geom.npy')
-        d_scores = np.load(pickle_base + scores_path + 'distance.npy')
-        o_scores = np.load(pickle_base + scores_path + 'orientation.npy')
-
-        num_imgs = g_scores.shape[0]
-        
+        g_scores, d_scores, o_scores = saveScores(n_people, NUM_IMGS, hand_base + path_in, path_out, dist_path, hand_base, pickle_base + scores_path)
+        # g_scores = np.load(pickle_base + scores_path + 'geom.npy')
+        # d_scores = np.load(pickle_base + scores_path + 'distance.npy')
+        # o_scores = np.load(pickle_base + scores_path + 'orientation.npy')
+         
         scores = [
                 ( g_scores, ('g', 'geom')       ),
                 ( d_scores, ('d', 'distance')   ),
@@ -637,9 +474,9 @@ def main():
                 ( 'f', 'fusion'     )
         ]
 
-        fusionScores(measures, num_imgs, pickle_base, norms_path)
+        fusionScores(measures, NUM_IMGS, pickle_base, norms_path)
 
-        saveParams(scores_reduct_all, measures, num_imgs, pickle_base, params_path, norms_path, scale)
+        saveParams(scores_reduct_all, measures, NUM_IMGS, pickle_base, params_path, norms_path, scale)
 
         saveFigures(scores_reduct_all, measures, pickle_base,  params_path, path_figs, thresholds, scale)
 

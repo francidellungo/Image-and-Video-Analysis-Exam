@@ -207,10 +207,10 @@ def distanceMap(cnt, r_idx):
         dp.append(d_value)
     max_value = np.max(dp)
     
-    print(max_value)
+    # print(max_value)
     # normalize distance map 
     dp = [i/max_value for i in dp]
-    print(np.max(dp))
+    # print(np.max(dp))
 
     return dp
 
