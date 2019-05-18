@@ -65,9 +65,9 @@ def saveScores(w, h, path_in, hand_base, scores_path):
 
         # matrices with scores for all people and all imgs ( features_scores[person][img] )
 
-        geom_scores = [[0 for x in range(w)] for y in range(h)]
-        distance_scores = [[0 for x in range(w)] for y in range(h)]
-        orientation_scores = [[0 for x in range(w)] for y in range(h)]
+        geom_scores = [[[] for x in range(w)] for y in range(h)]
+        distance_scores = [[[] for x in range(w)] for y in range(h)]
+        orientation_scores = [[[] for x in range(w)] for y in range(h)]
         
         # print('\n\n n pers:', h, 'n images: ', w)
 
@@ -153,6 +153,7 @@ def saveScores(w, h, path_in, hand_base, scores_path):
 
                 # to extract geometrical features we used non rotated fingers 
                 _, geom_features = extractGeometricalFeatures(r_based_contour[r_based_fingers_indexes], medium_points)
+                print(geom_features)
 
                 # print("n geom features: ",len(geom_features))
 
@@ -189,8 +190,8 @@ def saveScores(w, h, path_in, hand_base, scores_path):
                 orientation_scores[i % h][int(i / h)] = orientation_features
 
         geom_scores = np.array(geom_scores)
-        distance_scores = np.array(distance_scores)
-        orientation_scores = np.array(orientation_scores)
+        distance_scores = distance_scores
+        orientation_scores = orientation_scores
 
         d_shape = copy.deepcopy(distance_scores)
         o_shape = copy.deepcopy(orientation_scores)
@@ -200,25 +201,21 @@ def saveScores(w, h, path_in, hand_base, scores_path):
                         d_shape[i][j] = len(d_shape[i][j])
                         o_shape[i][j] = len(o_shape[i][j])
 
-        d_coeff = np.min(np.amin(np.array(d_shape),axis=0))
-        print(d_coeff)
+        d_coeff = np.min(np.amin(d_shape,axis=0))
+        print('d_coeff', d_coeff)
         for i in range(h):
                 for j in range(w):
                         distance_scores[i][j] = distance_scores[i][j][:d_coeff]
 
-        o_coeff = np.min(np.amin(np.array(o_shape),axis=0))
-        print(o_coeff)
+        o_coeff = np.min(np.amin(o_shape,axis=0))
+        print('o_coeff', o_coeff)
         for i in range(h):
                 for j in range(w):
-                        print(orientation_scores[i][j][:o_coeff])
                         orientation_scores[i][j] = orientation_scores[i][j][:o_coeff]
                         
-        print(distance_scores)
         np.save( scores_path + 'geom', geom_scores)
         np.save( scores_path + 'distance', distance_scores)
-        print(np.array(distance_scores).shape)
         np.save( scores_path + 'orientation', orientation_scores)
-        print(np.array(orientation_scores).shape)
 
 
 def saveMatrix(scores, measures, pickle_base, norms_path, row_path):
