@@ -16,3 +16,17 @@ def getScores(features, cod, measure):
 
     return scores
 
+
+def ScoresNormalization(scores, norm):
+    norm_scores = []
+    for f_type, features in enumerate(scores):
+        new_ele = []
+        for ele in features:
+            # print('ele ', ele)
+            new_ele.append((ele - norm[f_type]['min'])/(norm[f_type]['max'] - norm[f_type]['min']))
+            # print('new_ele ', (ele - norm[f_type]['min'])/(norm[f_type]['max'] - norm[f_type]['min']))
+        norm_scores.append(new_ele)
+
+    # print(norm_scores)
+
+    return norm_scores

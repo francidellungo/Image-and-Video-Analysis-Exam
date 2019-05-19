@@ -3,7 +3,7 @@ from preprocessing import *
 from fingerFeaturePoints import *
 from extractionShapeFeatures import *
 from AA_calculateFeatures import saveScores, getFeatureVectors
-from AA_calculateScore import getScores
+from AA_calculateScore import getScores, ScoresNormalization
 
 from Utils import *
 from geometricalFeaturesExtraction import *
@@ -528,8 +528,14 @@ def main():
         
         print('\n Normalization Scores')
         print(norm)
-        G_scores = ScoresNormalization(G_scores)
-        
+        G_norm = ScoresNormalization(G_scores, norm)
+        I_norm = []
+        for method in I_scores:
+                I_norm.append(ScoresNormalization(method, norm))
+
+        print('G: ', (G_norm, G_scores))
+        print('I: ', (I_norm, I_scores))
+
 
         saveMatrix(scores, measures, pickle_base, norms_path, row_path, NUM_IMGS)
 
