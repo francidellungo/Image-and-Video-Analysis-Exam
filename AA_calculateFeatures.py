@@ -51,7 +51,7 @@ def saveScores(w, h, path_in, path_out, dist_path, hand_base, scores_path):
                 # rotate based on middle finger point to center of mass axis
                 _, _, _, contour, center_of_mass = rotateHand(hand_mask.shape, contour, getAngle(finger_points[2],[list(center_of_mass)]), center_of_mass, fingers_indexes, valley_indexes)
 
-                print(center_of_mass)
+                # print(center_of_mass)
 
                 _, r_index = getReferencePoint(contour, fingers_indexes, center_of_mass)
 
@@ -104,9 +104,9 @@ def shapeNormalization(r_based_contour, center_of_mass, r_based_fingers_indexes,
         distance = np.linalg.norm(center_of_mass - r_based_contour[r_based_fingers_indexes[2]]) 
         # print(distance)
         scale_factor = LENGTH/distance
-        print(center_of_mass)
+        # print(center_of_mass)
         distance_vector = center_of_mass - center_of_mass*scale_factor
-        print(distance_vector)
+        # print(distance_vector)
         contour = np.array([ [[ int(x) for x in point[0]*scale_factor+distance_vector]] for point in r_based_contour])
         
         # img = draw(None, r_based_contour, [255, 0, 0], [], [255, 0, 0], None)
@@ -143,7 +143,7 @@ def getFeatureVectors(shape_normalization, g_scores, d_scores, o_scores, NUM_IMG
         centroids.append([np.array(x).tolist() for x in [d_scores[i] for i in centroids_indexes]])
         centroids.append([np.array(x).tolist() for x in [o_scores[i] for i in centroids_indexes]])
         I.append(centroids)
-        print('centroids ', centroids)
+        # print('centroids ', centroids)
 
         means = []
         g_means = []
@@ -185,7 +185,7 @@ def getFeatureVectors(shape_normalization, g_scores, d_scores, o_scores, NUM_IMG
         means.append(g_means)
         means.append(d_means)
         means.append(o_means)
-        print('means ', means)
+        # print('means ', means)
         I.append(means)
 
         return I

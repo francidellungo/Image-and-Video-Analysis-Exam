@@ -3,7 +3,7 @@ from preprocessing import *
 from fingerFeaturePoints import *
 from extractionShapeFeatures import *
 from AA_calculateFeatures import saveScores, getFeatureVectors
-from AA_calculateScore import getScores, ScoresNormalization
+from AA_calculateScore import getScores, ScoresNormalization, calculateFusion
 
 from Utils import *
 from geometricalFeaturesExtraction import *
@@ -450,46 +450,7 @@ def test(measures, path_test, hand_path, pickle_path , norms_path, row_path, num
         print('TEST verification insuccess   (meanshape): ', meanshape_verification_insuccess)
 
 
-def main():
-
-
-
-        scale = 1000
-        
-        paths = os.listdir(hand_base + path_in)
-
-        n_people, _ = countPeoplePhoto(hand_base + path_in)
-
-        # save scores
-        # shape_normalization, g_scores, d_scores, o_scores = saveScores(n_people, NUM_IMGS, hand_base + path_in, path_out, dist_path, hand_base, pickle_base + scores_path)
-        
-        # load scores
-        shape_normalization = np.load(pickle_base + scores_path + 'tot_shape.npy')
-        g_scores = np.load(pickle_base + scores_path + 'tot_geom.npy')
-        d_scores = np.load(pickle_base + scores_path + 'tot_distance.npy')
-        o_scores = np.load(pickle_base + scores_path + 'tot_orientation.npy')
-         
-        scores = [
-                ( g_scores, ('g', 'geom')       ),
-                ( d_scores, ('d', 'distance')   ),
-                ( o_scores, ('o', 'orientation'))  
-        ]
-
-        I = getFeatureVectors(shape_normalization, g_scores, d_scores, o_scores, NUM_IMGS)
-        G = [   
-                g_scores,
-                d_scores,
-                o_scores    ]
-
-        # TO-DO
-        # now we have I composed as slack: I = [prims, centroids, mean_shapes]
-        # where prims = [geom, dist, orien] features of first element
-        # where centroids = [geom, dist, orien] features of centroid elements
-        # where mean_shapes = [geom, dist, orien] features of mean_shapes
-        # and where geom, dist, orien are list of features
-
-        # for cod, (measure, mea) in measures:
-        cod, measure = 0, 'euclidean'
+def getNormScores(G, I, cod, measure, scores_path, NUM_IMGS):
         
         norm = [{'min': float('inf'), 'max': 0},
                 {'min': float('inf'), 'max': 0},
@@ -538,8 +499,63 @@ def main():
         for method in I_scores:
                 I_norm.append(ScoresNormalization(method, norm))
 
-        print('G: ', (G_norm, G_scores))
-        print('I: ', (I_norm, I_scores))
+        # print('G: ', (G_norm, G_scores))
+        # print('I: ', (I_norm, I_scores))
+
+        np.save( scores_path + 'G_norm_' + measure, G_norm)
+        np.save( scores_path + 'I_norm_' + measure, I_norm)
+        np.save( scores_path + 'norm_' + measure, norm)
+
+        return G_norm, I_norm, norm
+
+
+def main():
+
+
+
+        scale = 1000
+        
+        paths = os.listdir(hand_base + path_in)
+
+        n_people, _ = countPeoplePhoto(hand_base + path_in)
+
+        # save scores
+        # shape_normalization, g_scores, d_scores, o_scores = saveScores(n_people, NUM_IMGS, hand_base + path_in, path_out, dist_path, hand_base, pickle_base + scores_path)
+        
+        # load scores
+        shape_normalization = np.load(pickle_base + scores_path + 'tot_shape.npy')
+        g_scores = np.load(pickle_base + scores_path + 'tot_geom.npy')
+        d_scores = np.load(pickle_base + scores_path + 'tot_distance.npy')
+        o_scores = np.load(pickle_base + scores_path + 'tot_orientation.npy')
+         
+        scores = [
+                ( g_scores, ('g', 'geom')       ),
+                ( d_scores, ('d', 'distance')   ),
+                ( o_scores, ('o', 'orientation'))  
+        ]
+
+        I = getFeatureVectors(shape_normalization, g_scores, d_scores, o_scores, NUM_IMGS)
+        G = [   
+                g_scores,
+                d_scores,
+                o_scores    ]
+
+        # for cod, (measure, mea) in measures:
+        cod, measure = 0, 'euclidean'
+        
+        # G_norm, I_norm, norm = getNormScores(G, I, cod, measure, pickle_base + scores_path, NUM_IMGS)
+
+        G_norm = np.load( pickle_base + scores_path + 'G_norm_' + measure +'.npy')
+        I_norm = np.load( pickle_base + scores_path + 'I_norm_' + measure +'.npy')
+        norm = np.load( pickle_base + scores_path + 'norm_' + measure +'.npy')
+                
+        # G_gdof, I_gdof = calculateFusion(G_norm, I_norm, pickle_base + scores_path, measure)
+        
+        G_gdof = np.load( pickle_base + scores_path + 'G_gdof_' + measure +'.npy')
+        I_gdof = np.load( pickle_base + scores_path + 'I_gdof_' + measure +'.npy')
+
+        
+
 
 
         saveMatrix(scores, measures, pickle_base, norms_path, row_path, NUM_IMGS)
