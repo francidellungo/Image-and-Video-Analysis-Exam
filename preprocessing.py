@@ -95,10 +95,24 @@ def preprocessingHSV(img_bgr):
 
     mask_img = copy.deepcopy(h.reshape(-1))
 
-    unique, counts = np.unique(Y, return_counts=True)
-    dic = dict(zip(unique, counts))
-    
-    if dic[0] > dic[1]:
+    count_0_pixels = 0
+    count_1_pixels = 0
+    # count the number of pixels = 0 and = 1 in the upper border of the image
+    for i in range(0,shape[1]):
+        if Y[i] == 0:
+            count_0_pixels = count_0_pixels + 1 
+        else:
+            count_1_pixels = count_1_pixels + 1
+
+    # count the number of pixels = 0 and = 1 in the lower border of the image mask
+    for i in range(mask_img.shape[0]-1, mask_img.shape[0] - shape[1], -1):
+        if Y[i] == 0:
+            count_0_pixels = count_0_pixels + 1 
+        else:
+            count_1_pixels = count_1_pixels + 1
+
+
+    if count_0_pixels > count_1_pixels:
         mask_img[ Y==0 ] = 0 
         mask_img[ Y==1 ] = 1
     else:

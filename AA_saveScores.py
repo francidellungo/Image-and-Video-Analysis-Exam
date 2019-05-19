@@ -48,7 +48,7 @@ def saveScores(w, h, path_in, path_out, dist_path, hand_base, scores_path):
                 # returns ordinated points starting from little finger(0)
                 finger_points, _, fingers_indexes, valley_indexes = getFingerCoordinates(contour, hand_mask)
 
-                # rotate based on middle finger point to center of mass axes
+                # rotate based on middle finger point to center of mass axis
                 _, _, _, contour, center_of_mass = rotateHand(hand_mask.shape, contour, getAngle(finger_points[2],[list(center_of_mass)]), center_of_mass, fingers_indexes, valley_indexes)
 
                 print(center_of_mass)
@@ -79,6 +79,7 @@ def saveScores(w, h, path_in, path_out, dist_path, hand_base, scores_path):
         
         np.save( scores_path + 'tot_shape', shape_normalization)
 
+        # if there are less than 50 coeff for some images, we take for all the uqual number of coeff that is the min
         d_coeff = np.min([ len(ele) for ele in distance_scores])
         distance_scores = [ d_score[:d_coeff] for d_score in distance_scores]
 
@@ -125,10 +126,13 @@ def shapeNormalization(r_based_contour, center_of_mass, r_based_fingers_indexes,
 def getFeatureVectors(shape_normalization, g_scores, d_scores, o_scores, NUM_IMGS):
         I = []
         prims = []
+
+        # prims list contains lists of geometrical, distance and orientation scores
         prims.append([np.array(x).tolist() for x in g_scores[0::NUM_IMGS]])
         prims.append([np.array(x).tolist() for x in d_scores[0::NUM_IMGS]])
         prims.append([np.array(x).tolist() for x in o_scores[0::NUM_IMGS]])
         I.append(prims)
+
 
         mean_shapes, shapes, maxi_centroid = findMeanshape(shape_normalization, NUM_IMGS)
 
@@ -182,13 +186,16 @@ def getFeatureVectors(shape_normalization, g_scores, d_scores, o_scores, NUM_IMG
 
 def findMeanshape(shape_normalization, NUM_IMGS):
 
+        # find shape with maximum center of mass (maxi)
         maxi = [0, 0]
         for (_, c), _ in shape_normalization:
                 if maxi < c:
                         maxi = c
         
+        # align shapes: move each contour component to be centered in one center of mass (the same for all the shapes)
         shapes = [ [ [[ int(x) for x in  (np.array(point[0])+np.array(maxi)-np.array(c)).tolist()] ] for point in cnt] for (cnt, c), _ in shape_normalization]
-        # print(shapes)
+
+        # print(shapes[0])
         # img = np.zeros((500, 500, 3), np.uint8)
         # img = draw(img, [], None, [[maxi]], [0, 0, 255], None)
         # for i, cnt in enumerate(shapes):
