@@ -87,6 +87,8 @@ def saveParams(scores, measures, num_imgs, pickle_base, params_path, norms_path,
                         
                         performance_params = threshPerformanceParams(matrix_distances_norm, num_imgs, centroids_indexes, scale)
 
+                        print(len(performance_params), performance_params)
+
                         # matrixes.append(matrix_distances_norm)
 
                         np.save(pickle_base + params_path + file_name + '_' + mea, performance_params)
@@ -514,7 +516,7 @@ def main():
 
 
         scale = 1000
-        
+                
         paths = os.listdir(hand_base + path_in)
 
         n_people, _ = countPeoplePhoto(hand_base + path_in)
@@ -555,9 +557,10 @@ def main():
         I_gdof = np.load( pickle_base + scores_path + 'I_gdof_' + measure +'.npy')
 
         
+        print('len I ',len(I_gdof), len(I_gdof[0]), len(I_gdof[0][0]), (I_gdof[0][0]))
 
-
-
+        AA_saveParams(G_gdof, I_gdof, measures, scale)
+        print('......')
         saveMatrix(scores, measures, pickle_base, norms_path, row_path, NUM_IMGS)
 
         scores_reduct_all = [
