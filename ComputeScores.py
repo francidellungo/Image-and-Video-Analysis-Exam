@@ -13,9 +13,7 @@ def calculateGenuineCentroids(genuine_scores_list):
     return indexes
 
 
-def allScores(scores, cod, measure):
-
-    num_imgs = scores.shape[0]
+def allScores(scores, num_imgs, cod, measure):
 
     scores = np.array( scores )
     print('scores', scores.shape)

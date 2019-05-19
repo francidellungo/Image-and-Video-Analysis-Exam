@@ -2,7 +2,7 @@ from fingerCoordinates import *
 from preprocessing import *
 from fingerFeaturePoints import *
 from extractionShapeFeatures import *
-from AA_saveScores import saveScores
+from AA_saveScores import saveScores, getFeatureVectors
 from Utils import *
 from geometricalFeaturesExtraction import *
 from ComputeScores import *
@@ -58,13 +58,13 @@ measures = [
 ]
 
 
-def saveMatrix(scores, measures, pickle_base, norms_path, row_path):
+def saveMatrix(scores, measures, pickle_base, norms_path, row_path, num_imgs):
 
         for cod, (measure, mea) in measures:
 
                 for score, (l, file_name) in scores:
                 
-                        row_scores, matrix_distances, centroids_indexes = allScores(score, cod, measure)
+                        row_scores, matrix_distances, centroids_indexes = allScores(score, num_imgs, cod, measure)
 
                         matrix_distances_norm, mini, maxi = matrixNormalization(matrix_distances)
 
@@ -275,7 +275,7 @@ def countPeoplePhoto(path):
         return n_person, n_imgs
 
 
-def test(measures, path_test, hand_path, pickle_path , norms_path, row_path):
+def test(measures, path_test, hand_path, pickle_path , norms_path, row_path, num_imgs):
 
         print(' ----            TEST            ---- ')
         
@@ -352,11 +352,11 @@ def test(measures, path_test, hand_path, pickle_path , norms_path, row_path):
                         d_centroid = ci_d[np.ix_(r_d)]
                         o_centroid = ci_o[np.ix_(r_o)]
 
-                        _, g_big_matrix, _ = allScores(np.array([np.append(g_centroid, [g], axis=0)]), cod, measure)
+                        _, g_big_matrix, _ = allScores(np.array([np.append(g_centroid, [g], axis=0)]), num_imgs, cod, measure)
                         g_norm = matrixNormalizationMiniMaxi(g_big_matrix, g_mn, g_mx)
-                        _, d_big_matrix, _ = allScores(np.array([np.append(d_centroid, [d], axis=0)]), cod, measure)
+                        _, d_big_matrix, _ = allScores(np.array([np.append(d_centroid, [d], axis=0)]), num_imgs, cod, measure)
                         d_norm = matrixNormalizationMiniMaxi(d_big_matrix, d_mn, d_mx)
-                        _, o_big_matrix, _ = allScores(np.array([np.append(o_centroid, [o], axis=0)]), cod, measure)
+                        _, o_big_matrix, _ = allScores(np.array([np.append(o_centroid, [o], axis=0)]), num_imgs, cod, measure)
                         o_norm = matrixNormalizationMiniMaxi(o_big_matrix, o_mn, o_mx)
                                         
                         g_dist_norm = g_norm[-1]
@@ -397,11 +397,11 @@ def test(measures, path_test, hand_path, pickle_path , norms_path, row_path):
                         d_meanshape = [ np.mean(np.array(ci_d[ idx*5 : (idx+1)*5 ] ), axis=0 )for idx in range(len(r_g))]
                         o_meanshape = [ np.mean(np.array(ci_o[ idx*5 : (idx+1)*5 ] ), axis=0 )for idx in range(len(r_g))]
 
-                        _, g_big_matrix, _ = allScores(np.array([np.append(g_meanshape, [g], axis=0)]), cod, measure)
+                        _, g_big_matrix, _ = allScores(np.array([np.append(g_meanshape, [g], axis=0)]), num_imgs, cod, measure)
                         g_norm = matrixNormalizationMiniMaxi(g_big_matrix, g_mn, g_mx)
-                        _, d_big_matrix, _ = allScores(np.array([np.append(d_meanshape, [d], axis=0)]), cod, measure)
+                        _, d_big_matrix, _ = allScores(np.array([np.append(d_meanshape, [d], axis=0)]), num_imgs, cod, measure)
                         d_norm = matrixNormalizationMiniMaxi(d_big_matrix, d_mn, d_mx)
-                        _, o_big_matrix, _ = allScores(np.array([np.append(o_meanshape, [o], axis=0)]), cod, measure)
+                        _, o_big_matrix, _ = allScores(np.array([np.append(o_meanshape, [o], axis=0)]), num_imgs, cod, measure)
                         o_norm = matrixNormalizationMiniMaxi(o_big_matrix, o_mn, o_mx)
                                         
                         g_dist_norm = g_norm[-1]
@@ -454,10 +454,11 @@ def main():
 
         n_people, _ = countPeoplePhoto(hand_base + path_in)
 
-        g_scores, d_scores, o_scores = saveScores(n_people, NUM_IMGS, hand_base + path_in, path_out, dist_path, hand_base, pickle_base + scores_path)
-        # g_scores = np.load(pickle_base + scores_path + 'geom.npy')
-        # d_scores = np.load(pickle_base + scores_path + 'distance.npy')
-        # o_scores = np.load(pickle_base + scores_path + 'orientation.npy')
+        # shape_normalization, g_scores, d_scores, o_scores = saveScores(n_people, NUM_IMGS, hand_base + path_in, path_out, dist_path, hand_base, pickle_base + scores_path)
+        shape_normalization = np.load(pickle_base + scores_path + 'tot_shape.npy')
+        g_scores = np.load(pickle_base + scores_path + 'tot_geom.npy')
+        d_scores = np.load(pickle_base + scores_path + 'tot_distance.npy')
+        o_scores = np.load(pickle_base + scores_path + 'tot_orientation.npy')
          
         scores = [
                 ( g_scores, ('g', 'geom')       ),
@@ -465,7 +466,19 @@ def main():
                 ( o_scores, ('o', 'orientation'))  
         ]
 
-        saveMatrix(scores, measures, pickle_base, norms_path, row_path)
+        I = getFeatureVectors(shape_normalization, g_scores, d_scores, o_scores, NUM_IMGS)
+
+
+        # TO-DO
+        # now we have I composed as slack: I = [prims, centroids, mean_shapes]
+        # where prims = [geom, dist, orien] features of first element
+        # where centroids = [geom, dist, orien] features of centroid elements
+        # where mean_shapes = [geom, dist, orien] features of mean_shapes
+        # and where geom, dist, orien are list of features
+        
+
+
+        saveMatrix(scores, measures, pickle_base, norms_path, row_path, NUM_IMGS)
 
         scores_reduct_all = [
                 ( 'g', 'geom'       ),
@@ -480,7 +493,7 @@ def main():
 
         saveFigures(scores_reduct_all, measures, pickle_base,  params_path, path_figs, thresholds, scale)
 
-        test(measures, path_test, hand_path, pickle_path, norms_path, pickle_base + row_path )
+        test(measures, path_test, hand_path, pickle_path, norms_path, pickle_base + row_path , NUM_IMGS)
         
         
 
