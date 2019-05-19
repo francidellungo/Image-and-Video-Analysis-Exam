@@ -293,7 +293,9 @@ def test(measures, path_test, hand_path, pickle_path , norms_path, row_path, num
 
         n_people = len(tests)
 
-        saveScores(n_people, 1, path_test + hand_path + path_in, path_test + hand_path, path_test + pickle_path + scores_path)
+        # w, h, path_in, path_out, dist_path, hand_base, scores_path 
+        # saveScores(n_people, 1, path_test + hand_path + path_in, path_test + hand_path, path_test + pickle_path + scores_path)
+        saveScores(n_people, 1, path_test + hand_path + path_in, path_test + hand_path, path_test + hand_path + dist_path, hand_base , path_test + pickle_path + scores_path)
 
         EERs_g = dict()
         EERs_f = dict()
@@ -458,7 +460,10 @@ def main():
 
         n_people, _ = countPeoplePhoto(hand_base + path_in)
 
+        # save scores
         # shape_normalization, g_scores, d_scores, o_scores = saveScores(n_people, NUM_IMGS, hand_base + path_in, path_out, dist_path, hand_base, pickle_base + scores_path)
+        
+        # load scores
         shape_normalization = np.load(pickle_base + scores_path + 'tot_shape.npy')
         g_scores = np.load(pickle_base + scores_path + 'tot_geom.npy')
         d_scores = np.load(pickle_base + scores_path + 'tot_distance.npy')
