@@ -2,7 +2,9 @@ from fingerCoordinates import *
 from preprocessing import *
 from fingerFeaturePoints import *
 from extractionShapeFeatures import *
-from AA_saveScores import saveScores, getFeatureVectors
+from AA_calculateFeatures import saveScores, getFeatureVectors
+from AA_calculateScore import getScores
+
 from Utils import *
 from geometricalFeaturesExtraction import *
 from ComputeScores import *
@@ -448,6 +450,8 @@ def test(measures, path_test, hand_path, pickle_path , norms_path, row_path, num
 
 def main():
 
+
+
         scale = 1000
         
         paths = os.listdir(hand_base + path_in)
@@ -467,7 +471,10 @@ def main():
         ]
 
         I = getFeatureVectors(shape_normalization, g_scores, d_scores, o_scores, NUM_IMGS)
-
+        G = [   
+                g_scores,
+                d_scores,
+                o_scores    ]
 
         # TO-DO
         # now we have I composed as slack: I = [prims, centroids, mean_shapes]
@@ -475,8 +482,54 @@ def main():
         # where centroids = [geom, dist, orien] features of centroid elements
         # where mean_shapes = [geom, dist, orien] features of mean_shapes
         # and where geom, dist, orien are list of features
-        
 
+        # for cod, (measure, mea) in measures:
+        cod, measure = 0, 'euclidean'
+        
+        norm = [{'min': float('inf'), 'max': 0},
+                {'min': float('inf'), 'max': 0},
+                {'min': float('inf'), 'max': 0}]
+
+        print('\n Calculate Scores \n\n')
+        print('Genuini')
+        G_scores = []
+        for f_type, features in enumerate(G): 
+                G_persons = []
+                for person in [features[i*NUM_IMGS: (i+1)*NUM_IMGS] for i in range(int(len(features)/NUM_IMGS))]:
+                        app = getScores(person, cod, measure)
+
+                        mini = np.min(app)
+                        if mini < norm[f_type]['min']:
+                                norm[f_type]['min'] = mini
+                        maxi = np.max(app)
+                        if maxi > norm[f_type]['max']:
+                                norm[f_type]['max'] = maxi
+                        
+                        G_persons.append(app)
+                G_scores.append(G_persons)
+
+        print('Impostor')
+        I_scores = []
+        for i, method in enumerate(I):
+                print('Impostor ', i)
+                I_method = []
+                for f_type, features in enumerate(method):
+                        app = getScores(features, cod, measure)
+
+                        mini = np.min(app)
+                        if mini < norm[f_type]['min']:
+                                norm[f_type]['min'] = mini
+                        maxi = np.max(app)
+                        if maxi > norm[f_type]['max']:
+                                norm[f_type]['max'] = maxi
+
+                        I_method.append(app)
+                I_scores.append(I_method)
+        
+        print('\n Normalization Scores')
+        print(norm)
+        G_scores = ScoresNormalization(G_scores)
+        
 
         saveMatrix(scores, measures, pickle_base, norms_path, row_path, NUM_IMGS)
 

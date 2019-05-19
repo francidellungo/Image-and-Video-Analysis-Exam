@@ -135,10 +135,11 @@ def getFeatureVectors(shape_normalization, g_scores, d_scores, o_scores, NUM_IMG
         centroids_indexes = calculateCentroidIndexes(mean_shapes, shapes, NUM_IMGS)
 
         centroids = []
-        centroids.append([np.array(x).tolist() for x in g_scores[np.ix_(centroids_indexes)]])
-        centroids.append([np.array(x).tolist() for x in d_scores[np.ix_(centroids_indexes)]])
-        centroids.append([np.array(x).tolist() for x in o_scores[np.ix_(centroids_indexes)]])
+        centroids.append([np.array(x).tolist() for x in [g_scores[i] for i in centroids_indexes]])
+        centroids.append([np.array(x).tolist() for x in [d_scores[i] for i in centroids_indexes]])
+        centroids.append([np.array(x).tolist() for x in [o_scores[i] for i in centroids_indexes]])
         I.append(centroids)
+        print('centroids ', centroids)
 
         means = []
         g_means = []
@@ -167,14 +168,20 @@ def getFeatureVectors(shape_normalization, g_scores, d_scores, o_scores, NUM_IMG
                 updated_contour = fingerRegistration(copy.deepcopy(r_based_contour), center_of_mass, r_based_contour[r_based_fingers_indexes], medium_points, comp_valley_indexes, valley_indexes)
 
                 distance_features, orientation_features, _, _  = extractShapeFeatures(updated_contour, 0)
-
                 g_means.append(geom_features)
                 d_means.append(distance_features.tolist())
                 o_means.append(orientation_features.tolist())
 
+        d_coeff = np.min([ len(ele) for ele in d_means])
+        d_means = [ d_score[:d_coeff] for d_score in d_means]
+
+        o_coeff = np.min([ len(ele) for ele in o_means])
+        o_means = [ o_score[:o_coeff] for o_score in o_means]
+
         means.append(g_means)
         means.append(d_means)
         means.append(o_means)
+        print('means ', means)
         I.append(means)
 
         return I
@@ -226,7 +233,7 @@ def findMeanshape(shape_normalization, NUM_IMGS):
                 cnt = contours[0]
                 mean_shapes.append(cnt)
 
-        return mean_shapes, shapes,  maxi
+        return mean_shapes, shapes, maxi
 
 
 def calculateCentroidIndexes(mean_shape, shapes, NUM_IMGS):
@@ -258,4 +265,4 @@ def calculateCentroidIndexes(mean_shape, shapes, NUM_IMGS):
                 idx = np.argmax(areas)
                 centroids_indexes.append(idx)
 
-        return np.array(centroids_indexes)
+        return centroids_indexes
