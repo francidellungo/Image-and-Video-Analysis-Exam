@@ -2,18 +2,26 @@ from fingerCoordinates import *
 from preprocessing import *
 from fingerFeaturePoints import *
 from extractionShapeFeatures import *
+
+
 from AA_calculateFeatures import saveScores, getFeatureVectors
 from AA_calculateScore import getScores, ScoresNormalization, calculateFusion
+from AA_calculateMeasure import calculatePerformanceMeasures, calculatePerformanceParams
+
 
 from Utils import *
-from geometricalFeaturesExtraction import *
-from ComputeScores import *
+# from geometricalFeaturesExtraction import *
+# from ComputeScores import *
 import matplotlib.pyplot as plt
 import copy
 import json
 from operator import itemgetter
 
-NUM_IMGS = 5
+NUM_IMGS        = 5
+SCALE           = 1000
+CALCULATE_PRE   = False
+CALCULATE       = True
+CALCULATE_POST  = True
 
 hand_base = './hands/'
 path_in = 'dataset/'
@@ -75,7 +83,7 @@ def saveMatrix(scores, measures, pickle_base, norms_path, row_path, num_imgs):
                         np.save(pickle_base + 'mini_maxi/' + file_name + '_' + mea, (mini, maxi))
 
 
-def saveParams(scores, measures, num_imgs, pickle_base, params_path, norms_path, scale):
+def saveParams_old(scores, measures, num_imgs, pickle_base, params_path, norms_path, scale):
 
         for cod, (measure, mea) in measures:
 
@@ -133,19 +141,12 @@ def saveFigures(scores_reduct_all, measures, pickle_base, params_path, path_figs
         w = len(scores_reduct_all)
 
         perf_matrix = np.matrix( np.zeros(shape=( h * w, w * w )))
-
-        # print(perf_matrix.shape)
-
-        # fig_12_a = []
         
         for i, (cod, (measure, mea)) in enumerate(measures):
 
                 for j, (l, file_name )in enumerate(scores_reduct_all):
                         
                         perf_matrix[np.ix_(range( i * h, (i+1) * h), range( j * w, (j+1) * w))] = np.load(pickle_base + params_path + file_name + '_' + mea +'.npy')
-
-                # fig_12_a.append((measure, perf_matrix[i, -1]))
-
         
         for j, (_, title)  in enumerate(scores_reduct_all):
                 saveThreshFigure(h, w, measures, perf_matrix[np.ix_(range( h * w), range( j * w, (j+1) * w))], path_figs, title, thresholds)
@@ -249,34 +250,6 @@ def saveROCMeasureFigure(h, w, row_score, measure, scores_reduct_all):
         plt.legend()
         plt.savefig( path_figs + 'ROC_'+ measure + '.png')
         plt.close()
-
-
-def countPeoplePhoto(path):
-        paths = os.listdir(path)
-
-        d = dict()
-
-        for name_img in paths:
-                
-                new_name_img = name_img.replace('.JPG', '')
-                person_idx, img_idx = new_name_img.split("_")[:]
-                
-                if person_idx in d:
-                        d[person_idx].append(img_idx)
-                else:
-                        d[person_idx] = [ img_idx ]
-                
-        # print(d.values())
-
-        d1 = np.array([ len(elem) for elem in list(d.values())])
-        if d1.max() > d1.min():
-                print('people has different number of photos, check it!')
-                n_person, n_imgs = None, None
-        else:
-                # print('same number of photos')
-                n_person, n_imgs = len(d.values()), len(list(d.values())[0])
-        
-        return n_person, n_imgs
 
 
 def test(measures, path_test, hand_path, pickle_path , norms_path, row_path, num_imgs):
@@ -452,6 +425,38 @@ def test(measures, path_test, hand_path, pickle_path , norms_path, row_path, num
         print('TEST verification insuccess   (meanshape): ', meanshape_verification_insuccess)
 
 
+
+
+
+
+def countPeoplePhoto(path):
+        paths = os.listdir(path)
+
+        d = dict()
+
+        for name_img in paths:
+                
+                new_name_img = name_img.replace('.JPG', '')
+                person_idx, img_idx = new_name_img.split("_")[:]
+                
+                if person_idx in d:
+                        d[person_idx].append(img_idx)
+                else:
+                        d[person_idx] = [ img_idx ]
+                
+        # print(d.values())
+
+        d1 = np.array([ len(elem) for elem in list(d.values())])
+        if d1.max() > d1.min():
+                print('people has different number of photos, check it!')
+                n_person, n_imgs = None, None
+        else:
+                # print('same number of photos')
+                n_person, n_imgs = len(d.values()), len(list(d.values())[0])
+        
+        return n_person, n_imgs
+
+
 def getNormScores(G, I, cod, measure, scores_path, NUM_IMGS):
         
         norm = [{'min': float('inf'), 'max': 0},
@@ -513,22 +518,24 @@ def getNormScores(G, I, cod, measure, scores_path, NUM_IMGS):
 
 def main():
 
-
-
-        scale = 1000
+        
                 
         paths = os.listdir(hand_base + path_in)
 
         n_people, _ = countPeoplePhoto(hand_base + path_in)
-
-        # save scores
-        # shape_normalization, g_scores, d_scores, o_scores = saveScores(n_people, NUM_IMGS, hand_base + path_in, path_out, dist_path, hand_base, pickle_base + scores_path)
         
-        # load scores
-        shape_normalization = np.load(pickle_base + scores_path + 'tot_shape.npy')
-        g_scores = np.load(pickle_base + scores_path + 'tot_geom.npy')
-        d_scores = np.load(pickle_base + scores_path + 'tot_distance.npy')
-        o_scores = np.load(pickle_base + scores_path + 'tot_orientation.npy')
+        print('\n\n\n CALCULATE PRE \n\n\n')
+
+        
+        if CALCULATE_PRE:
+                # save scores
+                shape_normalization, g_scores, d_scores, o_scores = saveScores(n_people, NUM_IMGS, hand_base + path_in, path_out, dist_path, hand_base, pickle_base + scores_path)
+        else:
+                # load scores
+                shape_normalization = np.load(pickle_base + scores_path + 'tot_shape.npy')
+                g_scores = np.load(pickle_base + scores_path + 'tot_geom.npy')
+                d_scores = np.load(pickle_base + scores_path + 'tot_distance.npy')
+                o_scores = np.load(pickle_base + scores_path + 'tot_orientation.npy')
          
         scores = [
                 ( g_scores, ('g', 'geom')       ),
@@ -542,41 +549,63 @@ def main():
                 d_scores,
                 o_scores    ]
 
-        # for cod, (measure, mea) in measures:
-        cod, measure = 0, 'euclidean'
-        
-        # G_norm, I_norm, norm = getNormScores(G, I, cod, measure, pickle_base + scores_path, NUM_IMGS)
+        print('\n\n\n CALCULATE \n\n\n')
 
-        G_norm = np.load( pickle_base + scores_path + 'G_norm_' + measure +'.npy')
-        I_norm = np.load( pickle_base + scores_path + 'I_norm_' + measure +'.npy')
-        norm = np.load( pickle_base + scores_path + 'norm_' + measure +'.npy')
+        for cod, (measure, mea) in measures:
+                print('measure: ', measure)
+                # cod, measure = 0, 'euclidean'
+        
+                if CALCULATE:
+                        # save 
+                        G_norm, I_norm, norm = getNormScores(G, I, cod, measure, pickle_base + scores_path, NUM_IMGS)
+                else:
+                        # load 
+                        G_norm = np.load( pickle_base + scores_path + 'G_norm_' + measure +'.npy')
+                        I_norm = np.load( pickle_base + scores_path + 'I_norm_' + measure +'.npy')
+                        norm = np.load( pickle_base + scores_path + 'norm_' + measure +'.npy')
+                        
+                if CALCULATE:
+                        # save 
+                        G_gdof, I_gdof = calculateFusion(G_norm, I_norm, pickle_base + scores_path, measure)
+                else:
+                        # load
+                        G_gdof = np.load( pickle_base + scores_path + 'G_gdof_' + measure +'.npy')
+                        I_gdof = np.load( pickle_base + scores_path + 'I_gdof_' + measure +'.npy')
                 
-        # G_gdof, I_gdof = calculateFusion(G_norm, I_norm, pickle_base + scores_path, measure)
+                # print('len I ',len(I_gdof), len(I_gdof[0]), len(I_gdof[0][0]), (I_gdof[0][0]))
+
+                if CALCULATE:
+                        performance_measures = calculatePerformanceMeasures(G_gdof, I_gdof, measure, SCALE, pickle_base + scores_path)
+                else:
+                        performance_measures = np.load( pickle_base + scores_path + 'Measures_gdof_' + measure +'.npy')
+
+                if CALCULATE:
+                        performance_params = calculatePerformanceParams(performance_measures, measure, SCALE, pickle_base + scores_path)
+                else:
+                        performance_params = np.load( pickle_base + scores_path + 'Params_gdof_' + measure +'.npy')
+
+        print('\n\n\n CALCULATE POST \n\n\n')
         
-        G_gdof = np.load( pickle_base + scores_path + 'G_gdof_' + measure +'.npy')
-        I_gdof = np.load( pickle_base + scores_path + 'I_gdof_' + measure +'.npy')
+        
 
         
-        print('len I ',len(I_gdof), len(I_gdof[0]), len(I_gdof[0][0]), (I_gdof[0][0]))
 
-        AA_saveParams(G_gdof, I_gdof, measures, scale)
-        print('......')
-        saveMatrix(scores, measures, pickle_base, norms_path, row_path, NUM_IMGS)
+        # saveMatrix(scores, measures, pickle_base, norms_path, row_path, NUM_IMGS)
 
-        scores_reduct_all = [
-                ( 'g', 'geom'       ),
-                ( 'd', 'distance'   ),
-                ( 'o', 'orientation'),
-                ( 'f', 'fusion'     )
-        ]
+        # scores_reduct_all = [
+        #         ( 'g', 'geom'       ),
+        #         ( 'd', 'distance'   ),
+        #         ( 'o', 'orientation'),
+        #         ( 'f', 'fusion'     )
+        # ]
 
-        fusionScores(measures, NUM_IMGS, pickle_base, norms_path)
+        # fusionScores(measures, NUM_IMGS, pickle_base, norms_path)
 
-        saveParams(scores_reduct_all, measures, NUM_IMGS, pickle_base, params_path, norms_path, scale)
+        # saveParams_old(scores_reduct_all, measures, NUM_IMGS, pickle_base, params_path, norms_path, scale)
 
         saveFigures(scores_reduct_all, measures, pickle_base,  params_path, path_figs, thresholds, scale)
 
-        test(measures, path_test, hand_path, pickle_path, norms_path, pickle_base + row_path , NUM_IMGS)
+        # test(measures, path_test, hand_path, pickle_path, norms_path, pickle_base + row_path , NUM_IMGS)
         
         
 
