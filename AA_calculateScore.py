@@ -42,11 +42,12 @@ def calculateFusion(G_norm, I_norm, scores_path, measure):
         g, d, o = method
         sm = np.add(np.array(d), np.array(o))
         I_fusion = np.maximum(sm, np.array(g))
-        print(I_fusion)
-        print(I_norm[i])
+        # print(I_fusion)
+        # print(I_norm[i])
+        # print(np.append(I_norm[i], [I_fusion], axis=0).tolist())
         I_new.append(np.append(I_norm[i], [I_fusion], axis=0).tolist())
 
     np.save( scores_path + 'G_gdof_' + measure , G_norm)
     np.save( scores_path + 'I_gdof_' + measure , np.array(I_new))
 
-    return G_norm, I_norm
+    return G_norm, I_new
