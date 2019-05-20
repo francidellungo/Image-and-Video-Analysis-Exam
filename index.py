@@ -19,7 +19,7 @@ from operator import itemgetter
 
 NUM_IMGS        = 5
 SCALE           = 1000
-CALCULATE_PRE   = False
+CALCULATE_PRE   = True
 CALCULATE       = True
 CALCULATE_POST  = True
 
