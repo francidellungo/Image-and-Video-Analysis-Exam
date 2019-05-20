@@ -9,17 +9,16 @@ from AA_calculateScore import getScores, ScoresNormalization, calculateFusion
 from AA_calculateMeasure import calculatePerformanceMeasures, calculatePerformanceParams
 from AA_figureGenerator import saveFigures
 
-from Utils import *
-# from geometricalFeaturesExtraction import *
-# from ComputeScores import *
+from Utils import countPeoplePhoto
 import matplotlib.pyplot as plt
 import copy
 import json
 from operator import itemgetter
 
 NUM_IMGS        = 5
+LENGTH          = 300
 SCALE           = 1000
-CALCULATE_PRE   = True
+CALCULATE_PRE   = False
 CALCULATE       = True
 CALCULATE_POST  = True
 
@@ -43,8 +42,6 @@ path_test = './tests/'
 hand_path = 'hands/'
 pickle_path = 'pickles/'
 
-# paths = os.listdir(path_in)
-
 colours = [
             [ (0, 0, 255)    ,   'blue'        ],
             [ (0,128,0)      ,   'green'       ],
@@ -56,200 +53,72 @@ colours = [
             [ (255, 186, 230),   'pink'        ],
             [ (255, 69, 230) ,   'purple'      ],
             [ (0,255,0)      ,	'green1'       ],	 
-            [ (0,139,0)      ,   'green4'      ]	
-]
-
+            [ (0,139,0)      ,   'green4'      ]]
 
 measures = [
             ( 0  ,  ( 'l1'       , 'l1' ) ),
             ( 0  ,  ('euclidean' , 'euc') ),
             ( 0  ,  ('cosine'    , 'cos') ),
-            ( 1  ,  ('chi-square', 'chi') )
-]
+            ( 1  ,  ('chi-square', 'chi') )]
 
 
-def saveMatrix(scores, measures, pickle_base, norms_path, row_path, num_imgs):
+def getNormScores(G, I, cod, measure, scores_path, NUM_IMGS):
+        
+        norm = [{'min': float('inf'), 'max': 0},
+                {'min': float('inf'), 'max': 0},
+                {'min': float('inf'), 'max': 0}]
 
-        for cod, (measure, mea) in measures:
+        print('\n Calculate Scores \n\n')
+        print('Genuini')
+        G_scores = []
+        for f_type, features in enumerate(G): 
+                G_persons = []
+                for person in [features[i*NUM_IMGS: (i+1)*NUM_IMGS] for i in range(int(len(features)/NUM_IMGS))]:
+                        app = getScores(person, cod, measure)
 
-                for score, (l, file_name) in scores:
-                
-                        row_scores, matrix_distances, centroids_indexes = allScores(score, num_imgs, cod, measure)
-
-                        matrix_distances_norm, mini, maxi = matrixNormalization(matrix_distances)
-
-                        np.save(pickle_base + norms_path + file_name + '_' + mea, (centroids_indexes, matrix_distances_norm))
-                        np.save(pickle_base + row_path + file_name + '_' + mea, (centroids_indexes, row_scores))
-                        np.save(pickle_base + 'mini_maxi/' + file_name + '_' + mea, (mini, maxi))
-
-
-def saveParams_old(scores, measures, num_imgs, pickle_base, params_path, norms_path, scale):
-
-        for cod, (measure, mea) in measures:
-
-                # matrixes = []
-
-                for l, file_name in scores:
+                        mini = np.min(app)
+                        if mini < norm[f_type]['min']:
+                                norm[f_type]['min'] = mini
+                        maxi = np.max(app)
+                        if maxi > norm[f_type]['max']:
+                                norm[f_type]['max'] = maxi
                         
-                        centroids_indexes, matrix_distances_norm = np.load( pickle_base + norms_path + file_name + '_' + mea + '.npy' )
-                        
-                        performance_params = threshPerformanceParams(matrix_distances_norm, num_imgs, centroids_indexes, scale)
+                        G_persons.append(app)
+                G_scores.append(G_persons)
 
-                        print(len(performance_params), performance_params)
+        print('Impostor')
+        I_scores = []
+        for i, method in enumerate(I):
+                print('Impostor ', i)
+                I_method = []
+                for f_type, features in enumerate(method):
+                        app = getScores(features, cod, measure)
 
-                        # matrixes.append(matrix_distances_norm)
+                        mini = np.min(app)
+                        if mini < norm[f_type]['min']:
+                                norm[f_type]['min'] = mini
+                        maxi = np.max(app)
+                        if maxi > norm[f_type]['max']:
+                                norm[f_type]['max'] = maxi
 
-                        np.save(pickle_base + params_path + file_name + '_' + mea, performance_params)
-                        
-
-                # fusion = fusionScores( matrixes, cod, measure )
-
-                # np.save(norms_path + file_name + '_' + mea, fusion)
-                
-
-def fusionScores(measures, num_imgs, pickle_base, norms_path):
-
-        for cod, (measure, mea) in measures:
-                # print('done')
-                (_, g) = np.load( pickle_base + norms_path + 'geom_' + mea + '.npy' )               # g_centroids_indexes
-                (_, d) = np.load( pickle_base + norms_path + 'distance_' + mea + '.npy' )            # d_centroids_indexes
-                (_, o) = np.load( pickle_base + norms_path + 'orientation_' + mea + '.npy' )         # o_centroids_indexes
-
-                pd = np.multiply(d, o)
-                sm = np.add(d, o)
-                G = np.minimum(pd, g)
-                I = np.maximum(sm, g)
-
-                Z = copy.deepcopy(I)
-
-                for s in range(0, Z.shape[0], num_imgs):
-                        Z[np.ix_(range(s, s+num_imgs), range(s, s+num_imgs))] = G[np.ix_(range(s, s+num_imgs), range(s, s+num_imgs))]
-
-                Z, mini, maxi = matrixNormalization(Z)
-
-                # print('normalized matrix: ', Z)
-
-                centroids_indexes = allIndexes( num_imgs, Z )
-
-                np.save(pickle_base + norms_path + 'fusion_' + mea, (centroids_indexes, Z))
-                np.save(pickle_base + 'mini_maxi/' + 'fusion_' + mea, (mini, maxi))
-
-
-# def saveFigures(scores_reduct_all, measures, pickle_base, params_path, path_figs, thresholds, scale):
-
-#         h = scale
-#         w = len(scores_reduct_all)
-
-#         perf_matrix = np.matrix( np.zeros(shape=( h * w, w * w )))
+                        I_method.append(app)
+                I_scores.append(I_method)
         
-#         for i, (cod, (measure, mea)) in enumerate(measures):
+        print('\n Normalization Scores')
+        print(norm)
+        G_norm = ScoresNormalization(G_scores, norm)
+        I_norm = []
+        for method in I_scores:
+                I_norm.append(ScoresNormalization(method, norm))
 
-#                 for j, (l, file_name )in enumerate(scores_reduct_all):
-                        
-#                         perf_matrix[np.ix_(range( i * h, (i+1) * h), range( j * w, (j+1) * w))] = np.load(pickle_base + params_path + file_name + '_' + mea +'.npy')
-        
-#         for j, (_, title)  in enumerate(scores_reduct_all):
-#                 saveThreshFigure(h, w, measures, perf_matrix[np.ix_(range( h * w), range( j * w, (j+1) * w))], path_figs, title, thresholds)
-        
-#         for j, (_, title)  in enumerate(scores_reduct_all):
-#                 saveROCScoreFigure(h, w, perf_matrix[np.ix_(range( h * w), range( j * w, (j+1) * w))], title, measures)
+        # print('G: ', (G_norm, G_scores))
+        # print('I: ', (I_norm, I_scores))
 
-#         for i, (cod, (measure, mea))  in enumerate(measures):
-#                 saveROCMeasureFigure(h, w, perf_matrix[np.ix_(range( i * h, (i+1) * h), range( w * w ))], measure, scores_reduct_all)
+        np.save( scores_path + 'G_norm_' + measure, G_norm)
+        np.save( scores_path + 'I_norm_' + measure, I_norm)
+        np.save( scores_path + 'norm_' + measure, norm)
 
-        
-# def saveThreshFigure(h, w, measures, performance_params_list, path_figs, title, thresholds):
-
-#         x = np.linspace(0, 1.0, h)
-
-#         # print(len(performance_params_list))
-#         EERs = dict()
-
-#         for i,  (_, (measure, mea))  in enumerate(measures):
-#                 performance_params = performance_params_list[np.ix_(range( i * h, h * (i+1)), range( w ))]
-
-#                 # print(len(performance_params))
-                
-#                 y_FAR = performance_params[:,0]
-#                 # print(len(y_FAR))
-#                 y_FRR = performance_params[:,1]
-
-#                 idx_EER = np.argmin(np.abs(np.subtract(y_FAR, y_FRR)))
-#                 # print(idx_EER)
-#                 a = np.array(y_FAR[idx_EER][0][0])[0][0]
-#                 EER = (x[idx_EER], a)
-
-#                 EERs[mea] = EER 
-                
-#                 plt.plot(x, y_FAR, 'r', label='FAR')
-#                 plt.plot(x, y_FRR, 'b', label='FRR')
-#                 plt.scatter([EER[0]], [EER[1]], c='g' , label='EER')
-#                 plt.xlabel('Threshold')
-#                 plt.ylabel('Probability')
-#                 plt.title('Finding best Threshold - '+measure)
-#                 plt.legend()
-#                 plt.savefig(path_figs + 'thresh_fusion_' + measure + '.png')
-#                 plt.close()
-
-#         print(EERs)
-
-#         with open(thresholds + 'thresholds_' + title + '.json', 'w') as f:
-#                 json.dump(EERs, f)
-
-
-# def saveROCScoreFigure(h, w, column_score, title, measures):
-
-#         color = [
-#                 'r',
-#                 'g',
-#                 'c',
-#                 'b'
-#         ]
-
-        
-
-#         for i, (_, (measure, _))  in enumerate(measures):
-#                 performance_params = column_score[np.ix_(range( i * h, h * (i+1)), range( w ))]
-#                 # print(len(performance_params))
-#                 y_FAR = performance_params[:,0]
-#                 # print(y_FAR)
-#                 y_TAR = performance_params[:,2]
-
-#                 plt.plot(y_FAR, y_TAR, color[i], label=measure)
-        
-#         plt.xlabel('FAR')
-#         plt.ylabel('TAR')
-#         plt.xscale('log')
-#         plt.title('ROC - '+title)
-#         plt.legend()
-#         plt.savefig( path_figs + 'ROC_'+ title + '.png')
-#         plt.close()
-
-
-# def saveROCMeasureFigure(h, w, row_score, measure, scores_reduct_all):
-
-#         color = [
-#                 'r',
-#                 'g',
-#                 'c',
-#                 'b'
-#         ]
-#         # print(len(row_score[:,0]))
-
-#         for j, (_, title)  in enumerate(scores_reduct_all):
-#                 performance_params = row_score[np.ix_(range( h ), range( j * w, (j+1) * w ))]
-#                 y_FAR = performance_params[:,0]
-#                 y_TAR = performance_params[:,2]
-
-#                 plt.plot(y_FAR, y_TAR, color[j], label=title)
-        
-#         plt.xlabel('FAR')
-#         plt.ylabel('TAR')
-#         plt.xscale('log')
-#         plt.title('ROC - '+measure)
-#         plt.legend()
-#         plt.savefig( path_figs + 'ROC_'+ measure + '.png')
-#         plt.close()
+        return G_norm, I_norm, norm
 
 
 def test(measures, path_test, hand_path, pickle_path , norms_path, row_path, num_imgs):
@@ -429,97 +298,8 @@ def test(measures, path_test, hand_path, pickle_path , norms_path, row_path, num
 
 
 
-def countPeoplePhoto(path):
-        paths = os.listdir(path)
-
-        d = dict()
-
-        for name_img in paths:
-                
-                new_name_img = name_img.replace('.JPG', '')
-                person_idx, img_idx = new_name_img.split("_")[:]
-                
-                if person_idx in d:
-                        d[person_idx].append(img_idx)
-                else:
-                        d[person_idx] = [ img_idx ]
-                
-        # print(d.values())
-
-        d1 = np.array([ len(elem) for elem in list(d.values())])
-        if d1.max() > d1.min():
-                print('people has different number of photos, check it!')
-                n_person, n_imgs = None, None
-        else:
-                # print('same number of photos')
-                n_person, n_imgs = len(d.values()), len(list(d.values())[0])
-        
-        return n_person, n_imgs
-
-
-def getNormScores(G, I, cod, measure, scores_path, NUM_IMGS):
-        
-        norm = [{'min': float('inf'), 'max': 0},
-                {'min': float('inf'), 'max': 0},
-                {'min': float('inf'), 'max': 0}]
-
-        print('\n Calculate Scores \n\n')
-        print('Genuini')
-        G_scores = []
-        for f_type, features in enumerate(G): 
-                G_persons = []
-                for person in [features[i*NUM_IMGS: (i+1)*NUM_IMGS] for i in range(int(len(features)/NUM_IMGS))]:
-                        app = getScores(person, cod, measure)
-
-                        mini = np.min(app)
-                        if mini < norm[f_type]['min']:
-                                norm[f_type]['min'] = mini
-                        maxi = np.max(app)
-                        if maxi > norm[f_type]['max']:
-                                norm[f_type]['max'] = maxi
-                        
-                        G_persons.append(app)
-                G_scores.append(G_persons)
-
-        print('Impostor')
-        I_scores = []
-        for i, method in enumerate(I):
-                print('Impostor ', i)
-                I_method = []
-                for f_type, features in enumerate(method):
-                        app = getScores(features, cod, measure)
-
-                        mini = np.min(app)
-                        if mini < norm[f_type]['min']:
-                                norm[f_type]['min'] = mini
-                        maxi = np.max(app)
-                        if maxi > norm[f_type]['max']:
-                                norm[f_type]['max'] = maxi
-
-                        I_method.append(app)
-                I_scores.append(I_method)
-        
-        print('\n Normalization Scores')
-        print(norm)
-        G_norm = ScoresNormalization(G_scores, norm)
-        I_norm = []
-        for method in I_scores:
-                I_norm.append(ScoresNormalization(method, norm))
-
-        # print('G: ', (G_norm, G_scores))
-        # print('I: ', (I_norm, I_scores))
-
-        np.save( scores_path + 'G_norm_' + measure, G_norm)
-        np.save( scores_path + 'I_norm_' + measure, I_norm)
-        np.save( scores_path + 'norm_' + measure, norm)
-
-        return G_norm, I_norm, norm
-
-
 def main():
 
-        
-                
         paths = os.listdir(hand_base + path_in)
 
         n_people, _ = countPeoplePhoto(hand_base + path_in)
@@ -529,21 +309,15 @@ def main():
         
         if CALCULATE_PRE:
                 # save scores
-                shape_normalization, g_scores, d_scores, o_scores = saveScores(n_people, NUM_IMGS, hand_base + path_in, path_out, dist_path, hand_base, pickle_base + scores_path)
+                shape_normalization, g_scores, d_scores, o_scores = saveScores(LENGTH, n_people, NUM_IMGS, hand_base + path_in, path_out, dist_path, hand_base, pickle_base + scores_path)
         else:
                 # load scores
                 shape_normalization = np.load(pickle_base + scores_path + 'tot_shape.npy')
                 g_scores = np.load(pickle_base + scores_path + 'tot_geom.npy')
                 d_scores = np.load(pickle_base + scores_path + 'tot_distance.npy')
                 o_scores = np.load(pickle_base + scores_path + 'tot_orientation.npy')
-         
-        scores = [
-                ( g_scores, ('g', 'geom')       ),
-                ( d_scores, ('d', 'distance')   ),
-                ( o_scores, ('o', 'orientation'))  
-        ]
 
-        I = getFeatureVectors(shape_normalization, g_scores, d_scores, o_scores, NUM_IMGS)
+        I = getFeatureVectors(LENGTH, shape_normalization, g_scores, d_scores, o_scores, hand_base + path_out,  NUM_IMGS)
         G = [   
                 g_scores,
                 d_scores,
@@ -572,8 +346,6 @@ def main():
                         G_gdof = np.load( pickle_base + scores_path + 'G_gdof_' + measure +'.npy')
                         I_gdof = np.load( pickle_base + scores_path + 'I_gdof_' + measure +'.npy')
                 
-                # print('len I ',len(I_gdof), len(I_gdof[0]), len(I_gdof[0][0]), (I_gdof[0][0]))
-
                 if CALCULATE:
                         performance_measures = calculatePerformanceMeasures(G_gdof, I_gdof, measure, SCALE, pickle_base + scores_path)
                 else:
@@ -589,21 +361,12 @@ def main():
 
         print('\n\n\n CALCULATE POST \n\n\n')
         
-        
-
-        
-
-        # saveMatrix(scores, measures, pickle_base, norms_path, row_path, NUM_IMGS)
-
         scores_names = [ 'geom', 'distance', 'orientation', 'fusion' ]
         methods = [('p', 'prim'), ('c','centr'), ('m','meanshape')]
-        # fusionScores(measures, NUM_IMGS, pickle_base, norms_path)
-
-        # saveParams_old(scores_reduct_all, measures, NUM_IMGS, pickle_base, params_path, norms_path, scale)
-
-        # saveFigures(scores_reduct_all, measures, pickle_base,  params_path, path_figs, thresholds, SCALE)
 
         saveFigures(methods, scores_names, all_performance, measures, pickle_base, path_figs, thresholds, SCALE)
+
+        
 
         # test(measures, path_test, hand_path, pickle_path, norms_path, pickle_base + row_path , NUM_IMGS)
         

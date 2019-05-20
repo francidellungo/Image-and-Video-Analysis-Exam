@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import os
 
 # print(cv2.__version__)
 
@@ -98,3 +99,31 @@ def getShape(contour, w_bias, h_bias):
 	heigth = int( np.max(y) + h_bias)
 	
 	return tuple([heigth, width])
+
+
+def countPeoplePhoto(path):
+        paths = os.listdir(path)
+
+        d = dict()
+
+        for name_img in paths:
+                
+                new_name_img = name_img.replace('.JPG', '')
+                person_idx, img_idx = new_name_img.split("_")[:]
+                
+                if person_idx in d:
+                        d[person_idx].append(img_idx)
+                else:
+                        d[person_idx] = [ img_idx ]
+                
+        # print(d.values())
+
+        d1 = np.array([ len(elem) for elem in list(d.values())])
+        if d1.max() > d1.min():
+                print('people has different number of photos, check it!')
+                n_person, n_imgs = None, None
+        else:
+                # print('same number of photos')
+                n_person, n_imgs = len(d.values()), len(list(d.values())[0])
+        
+        return n_person, n_imgs

@@ -26,7 +26,7 @@ colours = [
             [ (0,139,0)      ,   'green4'      ]	
 ]
 
-def saveScores(w, h, path_in, path_out, dist_path, hand_base, scores_path):
+def saveScores(LENGTH, w, h, path_in, path_out, dist_path, hand_base, scores_path):
 
         paths = os.listdir(path_in)
         paths.sort()
@@ -45,13 +45,13 @@ def saveScores(w, h, path_in, path_out, dist_path, hand_base, scores_path):
                 # apply the preprocessing to the grey scale image
                 hand_mask, contour, center_of_mass, _  = getHand( img_bgr )
 
+                cv2.imwrite(hand_base + path_out + name_img, hand_mask)
+
                 # returns ordinated points starting from little finger(0)
                 finger_points, _, fingers_indexes, valley_indexes = getFingerCoordinates(contour, hand_mask)
 
                 # rotate based on middle finger point to center of mass axis
                 _, _, _, contour, center_of_mass = rotateHand(hand_mask.shape, contour, getAngle(finger_points[2],[list(center_of_mass)]), center_of_mass, fingers_indexes, valley_indexes)
-
-                # print(center_of_mass)
 
                 _, r_index = getReferencePoint(contour, fingers_indexes, center_of_mass)
 
@@ -62,13 +62,14 @@ def saveScores(w, h, path_in, path_out, dist_path, hand_base, scores_path):
 
 
                 # return: contour, medium_points, center of mass has to be the same
-                r_based_contour, medium_points, center_of_mass = shapeNormalization(r_based_contour, center_of_mass, r_based_fingers_indexes, medium_points)
+                r_based_contour, medium_points, center_of_mass = shapeNormalization(LENGTH, r_based_contour, center_of_mass, r_based_fingers_indexes, medium_points)
                 shape_normalization.append(((r_based_contour, center_of_mass), (medium_points, r_based_fingers_indexes, comp_valley_indexes, valley_indexes)))
 
 
                 # to extract geometrical features we used non rotated fingers 
                 _, geom_features = extractGeometricalFeatures(r_based_contour[r_based_fingers_indexes], medium_points)
 
+                print('\n saveScores \n')
                 updated_contour = fingerRegistration(copy.deepcopy(r_based_contour), center_of_mass, r_based_contour[r_based_fingers_indexes], medium_points, comp_valley_indexes, valley_indexes)
 
                 distance_features, orientation_features, _, _  = extractShapeFeatures(updated_contour, 0)
@@ -97,8 +98,8 @@ def saveScores(w, h, path_in, path_out, dist_path, hand_base, scores_path):
 
 
 # def saveRepresentatives(scores, score_name, scores_path):
-def shapeNormalization(r_based_contour, center_of_mass, r_based_fingers_indexes, medium_points):
-        LENGTH = 100
+def shapeNormalization(LENGTH, r_based_contour, center_of_mass, r_based_fingers_indexes, medium_points):
+        
         # print(center_of_mass)
         # print(r_based_contour[r_based_fingers_indexes[2]])
         distance = np.linalg.norm(center_of_mass - r_based_contour[r_based_fingers_indexes[2]]) 
@@ -123,7 +124,7 @@ def shapeNormalization(r_based_contour, center_of_mass, r_based_fingers_indexes,
 
 
 
-def getFeatureVectors(shape_normalization, g_scores, d_scores, o_scores, NUM_IMGS):
+def getFeatureVectors(LENGTH, shape_normalization, g_scores, d_scores, o_scores, path, NUM_IMGS):
         I = []
         prims = []
 
@@ -134,7 +135,7 @@ def getFeatureVectors(shape_normalization, g_scores, d_scores, o_scores, NUM_IMG
         I.append(prims)
 
 
-        mean_shapes, shapes, maxi_centroid = findMeanshape(shape_normalization, NUM_IMGS)
+        mean_shapes, shapes, maxi_centroid, size = findMeanshape(int(LENGTH/50), shape_normalization, NUM_IMGS)
 
         centroids_indexes = calculateCentroidIndexes(mean_shapes, shapes, NUM_IMGS)
 
@@ -149,10 +150,11 @@ def getFeatureVectors(shape_normalization, g_scores, d_scores, o_scores, NUM_IMG
         g_means = []
         d_means = []
         o_means = []
-        for shape in mean_shapes:
+        for idx, shape in enumerate(mean_shapes):
 
-                mask = np.zeros((500, 500), np.uint8)
+                mask = np.zeros(size, np.uint8)
                 cv2.fillPoly(mask, pts =[shape], color=(255))
+                cv2.imwrite(path + str(idx)+'_meanshape.JPG', mask)
                 mask[mask == 255]=1
                 properties = regionprops(mask, coordinates='xy')
                 center_of_mass = properties[0].centroid[::-1]
@@ -165,9 +167,11 @@ def getFeatureVectors(shape_normalization, g_scores, d_scores, o_scores, NUM_IMG
 
                 medium_points, valley_indexes, comp_valley_indexes = calculateMediumPoints(r_based_contour, r_based_valley_indexes, r_based_fingers_indexes)
 
-                r_based_contour, medium_points, center_of_mass = shapeNormalization(r_based_contour, np.array(list(center_of_mass)), r_based_fingers_indexes, medium_points)
+                r_based_contour, medium_points, center_of_mass = shapeNormalization(LENGTH, r_based_contour, np.array(list(center_of_mass)), r_based_fingers_indexes, medium_points)
 
                 _, geom_features = extractGeometricalFeatures(r_based_contour[r_based_fingers_indexes], medium_points)
+                
+                print('\n getFeatureVectors \n')
 
                 updated_contour = fingerRegistration(copy.deepcopy(r_based_contour), center_of_mass, r_based_contour[r_based_fingers_indexes], medium_points, comp_valley_indexes, valley_indexes)
 
@@ -191,33 +195,65 @@ def getFeatureVectors(shape_normalization, g_scores, d_scores, o_scores, NUM_IMG
         return I
 
 
-def findMeanshape(shape_normalization, NUM_IMGS):
+def findMeanshape(alpha, shape_normalization, NUM_IMGS):
 
         # find shape with maximum center of mass (maxi)
-        maxi = [0, 0]
+        max_centroid = [0, 0]
         for (_, c), _ in shape_normalization:
-                if maxi < c:
-                        maxi = c
+                if max_centroid < c:
+                        max_centroid = c
         
         # align shapes: move each contour component to be centered in one center of mass (the same for all the shapes)
-        shapes = [ [ [[ int(x) for x in  (np.array(point[0])+np.array(maxi)-np.array(c)).tolist()] ] for point in cnt] for (cnt, c), _ in shape_normalization]
+        shapes = [ [ [[ int(x) for x in  (np.array(point[0])+np.array(max_centroid)-np.array(c)).tolist()] ] for point in cnt] for (cnt, c), _ in shape_normalization]
+        rects = [ cv2.boundingRect(np.array(cnt)) for cnt in shapes]
 
         # print(shapes[0])
-        # img = np.zeros((500, 500, 3), np.uint8)
+
+        # img = np.zeros((1000, 1000, 3), np.uint8)
         # img = draw(img, [], None, [[maxi]], [0, 0, 255], None)
-        # for i, cnt in enumerate(shapes):
+        # for i, (cnt, rect) in enumerate(zip(shapes, rects)):
+        #         x,y,w,h = rect
         #         img = draw(img, np.array(cnt), list(colours[i%len(colours)][0]), [], [255, 0, 0], None)
+        #         cv2.rectangle(img,(x,y),(x+w,y+h),colours[i%len(colours)][0],2)
+
         # cv2.imshow('ciao', img)
         # cv2.waitKey(0)
         # cv2.destroyAllWindows()
+
+        mini, maxi = (min(x for x,y,w,h in rects)-alpha, min(y for x,y,w,h in rects)-alpha) , (max(x+w for x,y,w,h in rects)+alpha, max(y+h for x,y,w,h in rects)+alpha)
+        # img = draw(img, [], None, [[mini]], [0, 0, 255], None)
+        # img = draw(img, [], None, [[maxi]], [0, 0, 255], None)
+        # cv2.imshow('ciao', img)
+        # cv2.waitKey(0)
+        # cv2.destroyAllWindows()
+
+
+
+        shapes = [ [ [[ int(x) for x in  (np.array(point[0])-np.array(c)+np.array(max_centroid)-np.array(mini)).tolist()] ] for point in cnt] for (cnt, c), _ in shape_normalization]
+        rects = [ cv2.boundingRect(np.array(cnt)) for cnt in shapes]
+        centroid = (np.array(max_centroid)-np.array(mini)).tolist()
+        # print(shapes[0])
+        size = tuple((np.array(maxi)-np.array(mini)).tolist()[::-1])
+
+        # img = np.zeros((size[0], size[1], 3), np.uint8)
+        # img = draw(img, [], None, [[centroid]], [0, 0, 255], None)
+        # for i, (cnt, rect) in enumerate(zip(shapes, rects)):
+        #         x,y,w,h = rect
+        #         img = draw(img, np.array(cnt), list(colours[i%len(colours)][0]), [], [255, 0, 0], None)
+        #         cv2.rectangle(img,(x,y),(x+w,y+h),colours[i%len(colours)][0],2)
+
+        # cv2.imshow('ciao', img)
+        # cv2.waitKey(0)
+        # cv2.destroyAllWindows()
+
         step = int(255/NUM_IMGS)
         mean_shapes = []
         # print(len(shape_normalization)/NUM_IMGS)
         for i in range(int(len(shape_normalization)/NUM_IMGS)):
-                allin = np.zeros((500, 500), np.uint8)
+                allin = np.zeros(size, np.uint8)
                 person_shapes = shapes[i*NUM_IMGS:(i+1)*NUM_IMGS]
                 for ele in person_shapes:
-                        mask = np.zeros((500, 500), np.uint8)
+                        mask = np.zeros(size, np.uint8)
                         cv2.fillPoly(mask, pts =[np.array(ele)], color=(step))
                         allin = allin + mask
 
@@ -240,7 +276,7 @@ def findMeanshape(shape_normalization, NUM_IMGS):
                 cnt = contours[0]
                 mean_shapes.append(cnt)
 
-        return mean_shapes, shapes, maxi
+        return mean_shapes, shapes, centroid, size
 
 
 def calculateCentroidIndexes(mean_shape, shapes, NUM_IMGS):
