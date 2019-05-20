@@ -7,7 +7,7 @@ from extractionShapeFeatures import *
 from AA_calculateFeatures import saveScores, getFeatureVectors
 from AA_calculateScore import getScores, ScoresNormalization, calculateFusion
 from AA_calculateMeasure import calculatePerformanceMeasures, calculatePerformanceParams
-
+from AA_figureGenerator import saveFigures
 
 from Utils import *
 # from geometricalFeaturesExtraction import *
@@ -135,121 +135,121 @@ def fusionScores(measures, num_imgs, pickle_base, norms_path):
                 np.save(pickle_base + 'mini_maxi/' + 'fusion_' + mea, (mini, maxi))
 
 
-def saveFigures(scores_reduct_all, measures, pickle_base, params_path, path_figs, thresholds, scale):
+# def saveFigures(scores_reduct_all, measures, pickle_base, params_path, path_figs, thresholds, scale):
 
-        h = scale
-        w = len(scores_reduct_all)
+#         h = scale
+#         w = len(scores_reduct_all)
 
-        perf_matrix = np.matrix( np.zeros(shape=( h * w, w * w )))
+#         perf_matrix = np.matrix( np.zeros(shape=( h * w, w * w )))
         
-        for i, (cod, (measure, mea)) in enumerate(measures):
+#         for i, (cod, (measure, mea)) in enumerate(measures):
 
-                for j, (l, file_name )in enumerate(scores_reduct_all):
+#                 for j, (l, file_name )in enumerate(scores_reduct_all):
                         
-                        perf_matrix[np.ix_(range( i * h, (i+1) * h), range( j * w, (j+1) * w))] = np.load(pickle_base + params_path + file_name + '_' + mea +'.npy')
+#                         perf_matrix[np.ix_(range( i * h, (i+1) * h), range( j * w, (j+1) * w))] = np.load(pickle_base + params_path + file_name + '_' + mea +'.npy')
         
-        for j, (_, title)  in enumerate(scores_reduct_all):
-                saveThreshFigure(h, w, measures, perf_matrix[np.ix_(range( h * w), range( j * w, (j+1) * w))], path_figs, title, thresholds)
+#         for j, (_, title)  in enumerate(scores_reduct_all):
+#                 saveThreshFigure(h, w, measures, perf_matrix[np.ix_(range( h * w), range( j * w, (j+1) * w))], path_figs, title, thresholds)
         
-        for j, (_, title)  in enumerate(scores_reduct_all):
-                saveROCScoreFigure(h, w, perf_matrix[np.ix_(range( h * w), range( j * w, (j+1) * w))], title, measures)
+#         for j, (_, title)  in enumerate(scores_reduct_all):
+#                 saveROCScoreFigure(h, w, perf_matrix[np.ix_(range( h * w), range( j * w, (j+1) * w))], title, measures)
 
-        for i, (cod, (measure, mea))  in enumerate(measures):
-                saveROCMeasureFigure(h, w, perf_matrix[np.ix_(range( i * h, (i+1) * h), range( w * w ))], measure, scores_reduct_all)
+#         for i, (cod, (measure, mea))  in enumerate(measures):
+#                 saveROCMeasureFigure(h, w, perf_matrix[np.ix_(range( i * h, (i+1) * h), range( w * w ))], measure, scores_reduct_all)
 
         
-def saveThreshFigure(h, w, measures, performance_params_list, path_figs, title, thresholds):
+# def saveThreshFigure(h, w, measures, performance_params_list, path_figs, title, thresholds):
 
-        x = np.linspace(0, 1.0, h)
+#         x = np.linspace(0, 1.0, h)
 
-        # print(len(performance_params_list))
-        EERs = dict()
+#         # print(len(performance_params_list))
+#         EERs = dict()
 
-        for i,  (_, (measure, mea))  in enumerate(measures):
-                performance_params = performance_params_list[np.ix_(range( i * h, h * (i+1)), range( w ))]
+#         for i,  (_, (measure, mea))  in enumerate(measures):
+#                 performance_params = performance_params_list[np.ix_(range( i * h, h * (i+1)), range( w ))]
 
-                # print(len(performance_params))
+#                 # print(len(performance_params))
                 
-                y_FAR = performance_params[:,0]
-                # print(len(y_FAR))
-                y_FRR = performance_params[:,1]
+#                 y_FAR = performance_params[:,0]
+#                 # print(len(y_FAR))
+#                 y_FRR = performance_params[:,1]
 
-                idx_EER = np.argmin(np.abs(np.subtract(y_FAR, y_FRR)))
-                # print(idx_EER)
-                a = np.array(y_FAR[idx_EER][0][0])[0][0]
-                EER = (x[idx_EER], a)
+#                 idx_EER = np.argmin(np.abs(np.subtract(y_FAR, y_FRR)))
+#                 # print(idx_EER)
+#                 a = np.array(y_FAR[idx_EER][0][0])[0][0]
+#                 EER = (x[idx_EER], a)
 
-                EERs[mea] = EER 
+#                 EERs[mea] = EER 
                 
-                plt.plot(x, y_FAR, 'r', label='FAR')
-                plt.plot(x, y_FRR, 'b', label='FRR')
-                plt.scatter([EER[0]], [EER[1]], c='g' , label='EER')
-                plt.xlabel('Threshold')
-                plt.ylabel('Probability')
-                plt.title('Finding best Threshold - '+measure)
-                plt.legend()
-                plt.savefig(path_figs + 'thresh_fusion_' + measure + '.png')
-                plt.close()
+#                 plt.plot(x, y_FAR, 'r', label='FAR')
+#                 plt.plot(x, y_FRR, 'b', label='FRR')
+#                 plt.scatter([EER[0]], [EER[1]], c='g' , label='EER')
+#                 plt.xlabel('Threshold')
+#                 plt.ylabel('Probability')
+#                 plt.title('Finding best Threshold - '+measure)
+#                 plt.legend()
+#                 plt.savefig(path_figs + 'thresh_fusion_' + measure + '.png')
+#                 plt.close()
 
-        print(EERs)
+#         print(EERs)
 
-        with open(thresholds + 'thresholds_' + title + '.json', 'w') as f:
-                json.dump(EERs, f)
+#         with open(thresholds + 'thresholds_' + title + '.json', 'w') as f:
+#                 json.dump(EERs, f)
 
 
-def saveROCScoreFigure(h, w, column_score, title, measures):
+# def saveROCScoreFigure(h, w, column_score, title, measures):
 
-        color = [
-                'r',
-                'g',
-                'c',
-                'b'
-        ]
+#         color = [
+#                 'r',
+#                 'g',
+#                 'c',
+#                 'b'
+#         ]
 
         
 
-        for i, (_, (measure, _))  in enumerate(measures):
-                performance_params = column_score[np.ix_(range( i * h, h * (i+1)), range( w ))]
-                # print(len(performance_params))
-                y_FAR = performance_params[:,0]
-                # print(y_FAR)
-                y_TAR = performance_params[:,2]
+#         for i, (_, (measure, _))  in enumerate(measures):
+#                 performance_params = column_score[np.ix_(range( i * h, h * (i+1)), range( w ))]
+#                 # print(len(performance_params))
+#                 y_FAR = performance_params[:,0]
+#                 # print(y_FAR)
+#                 y_TAR = performance_params[:,2]
 
-                plt.plot(y_FAR, y_TAR, color[i], label=measure)
+#                 plt.plot(y_FAR, y_TAR, color[i], label=measure)
         
-        plt.xlabel('FAR')
-        plt.ylabel('TAR')
-        plt.xscale('log')
-        plt.title('ROC - '+title)
-        plt.legend()
-        plt.savefig( path_figs + 'ROC_'+ title + '.png')
-        plt.close()
+#         plt.xlabel('FAR')
+#         plt.ylabel('TAR')
+#         plt.xscale('log')
+#         plt.title('ROC - '+title)
+#         plt.legend()
+#         plt.savefig( path_figs + 'ROC_'+ title + '.png')
+#         plt.close()
 
 
-def saveROCMeasureFigure(h, w, row_score, measure, scores_reduct_all):
+# def saveROCMeasureFigure(h, w, row_score, measure, scores_reduct_all):
 
-        color = [
-                'r',
-                'g',
-                'c',
-                'b'
-        ]
-        # print(len(row_score[:,0]))
+#         color = [
+#                 'r',
+#                 'g',
+#                 'c',
+#                 'b'
+#         ]
+#         # print(len(row_score[:,0]))
 
-        for j, (_, title)  in enumerate(scores_reduct_all):
-                performance_params = row_score[np.ix_(range( h ), range( j * w, (j+1) * w ))]
-                y_FAR = performance_params[:,0]
-                y_TAR = performance_params[:,2]
+#         for j, (_, title)  in enumerate(scores_reduct_all):
+#                 performance_params = row_score[np.ix_(range( h ), range( j * w, (j+1) * w ))]
+#                 y_FAR = performance_params[:,0]
+#                 y_TAR = performance_params[:,2]
 
-                plt.plot(y_FAR, y_TAR, color[j], label=title)
+#                 plt.plot(y_FAR, y_TAR, color[j], label=title)
         
-        plt.xlabel('FAR')
-        plt.ylabel('TAR')
-        plt.xscale('log')
-        plt.title('ROC - '+measure)
-        plt.legend()
-        plt.savefig( path_figs + 'ROC_'+ measure + '.png')
-        plt.close()
+#         plt.xlabel('FAR')
+#         plt.ylabel('TAR')
+#         plt.xscale('log')
+#         plt.title('ROC - '+measure)
+#         plt.legend()
+#         plt.savefig( path_figs + 'ROC_'+ measure + '.png')
+#         plt.close()
 
 
 def test(measures, path_test, hand_path, pickle_path , norms_path, row_path, num_imgs):
@@ -550,7 +550,7 @@ def main():
                 o_scores    ]
 
         print('\n\n\n CALCULATE \n\n\n')
-
+        all_performance = []
         for cod, (measure, mea) in measures:
                 print('measure: ', measure)
                 # cod, measure = 0, 'euclidean'
@@ -584,6 +584,9 @@ def main():
                 else:
                         performance_params = np.load( pickle_base + scores_path + 'Params_gdof_' + measure +'.npy')
 
+                all_performance.append(performance_params)
+
+
         print('\n\n\n CALCULATE POST \n\n\n')
         
         
@@ -592,18 +595,15 @@ def main():
 
         # saveMatrix(scores, measures, pickle_base, norms_path, row_path, NUM_IMGS)
 
-        # scores_reduct_all = [
-        #         ( 'g', 'geom'       ),
-        #         ( 'd', 'distance'   ),
-        #         ( 'o', 'orientation'),
-        #         ( 'f', 'fusion'     )
-        # ]
-
+        scores_names = [ 'geom', 'distance', 'orientation', 'fusion' ]
+        methods = [('p', 'prim'), ('c','centr'), ('m','meanshape')]
         # fusionScores(measures, NUM_IMGS, pickle_base, norms_path)
 
         # saveParams_old(scores_reduct_all, measures, NUM_IMGS, pickle_base, params_path, norms_path, scale)
 
-        saveFigures(scores_reduct_all, measures, pickle_base,  params_path, path_figs, thresholds, scale)
+        # saveFigures(scores_reduct_all, measures, pickle_base,  params_path, path_figs, thresholds, SCALE)
+
+        saveFigures(methods, scores_names, all_performance, measures, pickle_base, path_figs, thresholds, SCALE)
 
         # test(measures, path_test, hand_path, pickle_path, norms_path, pickle_base + row_path , NUM_IMGS)
         
