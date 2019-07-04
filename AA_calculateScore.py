@@ -4,7 +4,7 @@ from sklearn.metrics import pairwise_distances, pairwise
 def getScores(features, cod, measure):
     
     features = np.array( features )
-    print('features', features.shape)
+    # print('features', features.shape)
 
     if cod == 0:
         matrix = pairwise_distances( features , metric=measure )

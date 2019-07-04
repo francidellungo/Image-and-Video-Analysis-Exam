@@ -124,7 +124,7 @@ def shapeNormalization(LENGTH, r_based_contour, center_of_mass, r_based_fingers_
 
 
 
-def getFeatureVectors(LENGTH, shape_normalization, g_scores, d_scores, o_scores, path, NUM_IMGS):
+def getFeatureVectors(LENGTH, shape_normalization, g_scores, d_scores, o_scores, path, NUM_IMGS, pickle_base, features_matrix_path):
         I = []
         prims = []
 
@@ -191,6 +191,9 @@ def getFeatureVectors(LENGTH, shape_normalization, g_scores, d_scores, o_scores,
         means.append(o_means)
         # print('means ', means)
         I.append(means)
+        
+        # save imposter matrix of features
+        np.save( pickle_base + features_matrix_path + 'Imposter.npy', I)
 
         return I
 

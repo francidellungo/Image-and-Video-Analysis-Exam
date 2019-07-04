@@ -14,13 +14,14 @@ import matplotlib.pyplot as plt
 import copy
 import json
 from operator import itemgetter
+import numpy as np
 
 NUM_IMGS        = 5
 LENGTH          = 300
 SCALE           = 1000
 CALCULATE_PRE   = False
-CALCULATE       = True
-CALCULATE_POST  = True
+CALCULATE       = False
+CALCULATE_POST  = False
 
 hand_base = './hands/'
 path_in = 'dataset/'
@@ -35,6 +36,7 @@ params_path = 'params/'
 norms_path = 'norms/'
 row_path = 'rows/'
 dist_path = 'dist_map/'
+features_matrix_path = 'features_matrix/'
 thresholds = pickle_base
 
 path_figs = './figures/'
@@ -60,6 +62,12 @@ measures = [
             ( 0  ,  ('euclidean' , 'euc') ),
             ( 0  ,  ('cosine'    , 'cos') ),
             ( 1  ,  ('chi-square', 'chi') )]
+
+centr_types = [
+        (0, 'p'),
+        (1, 'c'),
+        (2, 'm')
+]
 
 
 def getNormScores(G, I, cod, measure, scores_path, NUM_IMGS):
@@ -121,6 +129,142 @@ def getNormScores(G, I, cod, measure, scores_path, NUM_IMGS):
         return G_norm, I_norm, norm
 
 
+
+def test_new(measures, path_test, hand_path, pickle_path, norms_path, row_path, num_imgs):
+        print(' ----            TEST            ---- ')
+        
+        # euclidean measure
+        cod, (measure, mea) = measures[1]
+        
+        tests = os.listdir(path_test + hand_path + path_in)
+        tests.sort()
+
+        dataset = os.listdir(hand_base + path_in)
+        dataset = [ image.replace('.JPG', '').split("_")[0] for image in dataset] 
+        
+        dataset = set(dataset)
+        dataset = list(dataset)
+
+        # dataset contains all the images of the test set (the name is the one of the person to whom the image is related)
+        dataset.sort()
+
+        n_people = len(tests)
+
+        shape_normalization, g_scores, d_scores, o_scores = saveScores(LENGTH, n_people, NUM_IMGS, path_test + hand_path + path_in, path_out, dist_path, hand_base, path_test + pickle_path + scores_path)
+        # path_test + hand_path + path_in, path_test + hand_path, path_test + hand_path + dist_path, hand_base , path_test + pickle_path + scores_path
+
+        EERs_g = dict()
+        EERs_d = dict()
+        EERs_o = dict()
+        EERs_f = dict()
+
+        with open(thresholds + 'thresholds_geom.json', 'r') as f:
+                EERs_g = json.load(f)
+
+
+        with open(thresholds + 'thresholds_distance.json', 'r') as f:
+                EERs_d = json.load(f)
+
+        with open(thresholds + 'thresholds_orientation.json', 'r') as f:
+                EERs_o = json.load(f)
+
+        with open(thresholds + 'thresholds_fusion.json', 'r') as f:
+                EERs_f = json.load(f)
+
+        # load imposter matrix of features
+        I = np.load(pickle_base + features_matrix_path + 'Imposter.npy')
+
+        test = dict()
+        for cod, (measure, mea) in measures:
+                
+
+                for centr_type_i, centr_type in centr_types:
+                
+                        test_method = [ [0, 0], [0, 0] ]
+                
+                        for i, name_img in enumerate(tests):
+
+                                # print('\n \n ---> ' ,name_img)
+                                new_name_img = name_img.replace('.JPG', '')
+                                person_idx, img_idx = new_name_img.split("_")[:]
+                                # print(person_idx, img_idx)
+                        
+                                # test_method: identification success and insucess in the first list, same for  verification
+                                
+                                # calculate distances with old imgs with the new one of the test set
+                                print(' ')
+
+                                # geometrical features (first the one of the test photo)
+                                new_geom_features = np.append( [g_scores[i]], I[centr_type_i][0].tolist(), axis=0 )
+                                new_dist_features = np.append( [d_scores[i]], I[centr_type_i][1].tolist(), axis=0 )
+                                new_or_features = np.append( [o_scores[i]], I[centr_type_i][2].tolist(), axis=0 )
+                                # print(len(new_geom_features), len(new_dist_features), len(new_or_features))
+                                
+
+                                # get scores
+                                geom_scores = getScores( new_geom_features, cod, measure)
+                                dist_scores = getScores(new_dist_features, cod, measure)
+                                or_scores = getScores(new_or_features, cod, measure)
+                                # print('...........')
+                                # print('len(geom_scores),len(dist_scores): ',len(geom_scores),len(dist_scores) , geom_scores)
+
+                                norm = np.load( pickle_base + scores_path + 'norm_' + measure +'.npy')
+                                # norm element :
+                                # norm [{'min': 0.0, 'max': 5.300033361143047}
+                                # {'min': 0.0, 'max': 48.50010959417264}
+                                # {'min': 0.0, 'max': 2481.044730840103}]
+                                norm_scores = ScoresNormalization([[geom_scores], [dist_scores], [or_scores]], norm)
+                                
+                                n_people_scores = new_geom_features.shape[0]
+
+                                geom_score_test = norm_scores[0][0][:n_people_scores-1]
+                                dist_score_test = norm_scores[1][0][:n_people_scores-1]
+                                or_score_test = norm_scores[2][0][:n_people_scores-1]
+                                
+                                pd = np.multiply(dist_score_test, or_score_test)
+                                f_score_test = np.minimum(pd, geom_score_test)
+
+
+
+                                g_maybe = [x[0] for x in sorted([ [x, y] for x, y in enumerate( geom_score_test ) if y < EERs_g[mea][centr_type][0]], key=itemgetter(1))]
+                                d_maybe = [x[0] for x in sorted([ [x, y] for x, y in enumerate( dist_score_test ) if y < EERs_d[mea][centr_type][0]], key=itemgetter(1))]
+                                o_maybe = [x[0] for x in sorted([ [x, y] for x, y in enumerate( or_score_test ) if y < EERs_o[mea][centr_type][0]], key=itemgetter(1))]
+                                f_maybe = [x[0] for x in sorted([ [x, y] for x, y in enumerate( f_score_test ) if y < EERs_f[mea][centr_type][0]], key=itemgetter(1))] 
+
+                                # print('TEST ' , person_idx , ' geom ' , [dataset[idx] for idx in g_maybe] , ' ', mea)
+                                # print('TEST ' , person_idx , ' dMap ' , [dataset[idx] for idx in d_maybe] , ' ', mea)
+                                # print('TEST ' , person_idx , ' oMap ' , [dataset[idx] for idx in o_maybe] , ' ', mea)
+                                # print('TEST ' , person_idx , mea , centr_type, [dataset[idx] for idx in f_maybe] )
+
+                                if len([dataset[idx] for idx in f_maybe]) > 0:
+                                        if person_idx == dataset[f_maybe[0]]:
+                                                test_method[0][0] = test_method[0][0] + 1
+                                                # centr_fusion_success = centr_fusion_success + 1
+                                        else:
+                                                test_method[0][1] = test_method[0][1] + 1
+                                                # centr_fusion_insuccess = centr_fusion_insuccess + 1
+
+                                        if person_idx in  [dataset[idx] for idx in f_maybe]:
+                                                test_method[1][0] = test_method[1][0] + 1
+                                                # centr_verification_success = centr_verification_success + 1
+                                        else:
+                                                test_method[1][1] = test_method[1][1] + 1
+                                                # centr_verification_insuccess = centr_verification_insuccess + 1
+                                else:
+                                        # print(person_idx, ' not found in dataset. ')
+                                        test_method[0][1] = test_method[0][1] + 1
+                                        test_method[1][1] = test_method[1][1] + 1
+                                        
+                        test[centr_type] = test_method
+                print(' ')
+                for key, val in test.items():
+                        print('TEST IDEN [SUC, INS] ', key, val[0][0], val[0][1] )
+                        print('TEST VERI [SUC, INS] ', key, val[1][0], val[1][1] )
+
+
+                        
+        
+
 def test(measures, path_test, hand_path, pickle_path , norms_path, row_path, num_imgs):
 
         print(' ----            TEST            ---- ')
@@ -139,7 +283,7 @@ def test(measures, path_test, hand_path, pickle_path , norms_path, row_path, num
 
         # w, h, path_in, path_out, dist_path, hand_base, scores_path 
         # saveScores(n_people, 1, path_test + hand_path + path_in, path_test + hand_path, path_test + pickle_path + scores_path)
-        saveScores(n_people, 1, path_test + hand_path + path_in, path_test + hand_path, path_test + hand_path + dist_path, hand_base , path_test + pickle_path + scores_path)
+        # saveScores(n_people, 1, path_test + hand_path + path_in, path_test + hand_path, path_test + hand_path + dist_path, hand_base , path_test + pickle_path + scores_path)
 
         EERs_g = dict()
         EERs_f = dict()
@@ -185,6 +329,8 @@ def test(measures, path_test, hand_path, pickle_path , norms_path, row_path, num
                         (r_g, ci_g)     = np.load( row_path + 'geom_' + mea + '.npy' )                
                         (g_mn, g_mx)    = np.load(pickle_base + 'mini_maxi/' + 'geom_' + mea + '.npy')
 
+                        print(r_g, len(r_g))
+
                         (r_d, ci_d)     = np.load( row_path + 'distance_' + mea + '.npy' )            
                         (d_mn, d_mx)    = np.load(pickle_base + 'mini_maxi/' + 'distance_' + mea + '.npy')
 
@@ -199,6 +345,8 @@ def test(measures, path_test, hand_path, pickle_path , norms_path, row_path, num
                         g_centroid = ci_g[np.ix_(r_g)]
                         d_centroid = ci_d[np.ix_(r_d)]
                         o_centroid = ci_o[np.ix_(r_o)]
+
+                        print('len vecchie:',len(g_centroid), len([g]))
 
                         _, g_big_matrix, _ = allScores(np.array([np.append(g_centroid, [g], axis=0)]), num_imgs, cod, measure)
                         g_norm = matrixNormalizationMiniMaxi(g_big_matrix, g_mn, g_mx)
@@ -317,12 +465,21 @@ def main():
                 d_scores = np.load(pickle_base + scores_path + 'tot_distance.npy')
                 o_scores = np.load(pickle_base + scores_path + 'tot_orientation.npy')
 
-        I = getFeatureVectors(LENGTH, shape_normalization, g_scores, d_scores, o_scores, hand_base + path_out,  NUM_IMGS)
+        print('g_scores : ', g_scores, len(g_scores),  len(g_scores[0]))
+        print('dir_scores : ', d_scores, len(d_scores),  len(d_scores[0]))
+        # save imposter matrix of features
+        if CALCULATE:
+                I = getFeatureVectors(LENGTH, shape_normalization, g_scores, d_scores, o_scores, hand_base + path_out,  NUM_IMGS, pickle_base, features_matrix_path)
+
+        else:
+                # load imposter matrix of features
+                I = np.load(pickle_base + features_matrix_path + 'Imposter.npy')
+
         G = [   
                 g_scores,
                 d_scores,
                 o_scores    ]
-
+        
         print('\n\n\n CALCULATE \n\n\n')
         all_performance = []
         for cod, (measure, mea) in measures:
@@ -337,7 +494,7 @@ def main():
                         G_norm = np.load( pickle_base + scores_path + 'G_norm_' + measure +'.npy')
                         I_norm = np.load( pickle_base + scores_path + 'I_norm_' + measure +'.npy')
                         norm = np.load( pickle_base + scores_path + 'norm_' + measure +'.npy')
-                        
+
                 if CALCULATE:
                         # save 
                         G_gdof, I_gdof = calculateFusion(G_norm, I_norm, pickle_base + scores_path, measure)
@@ -364,11 +521,11 @@ def main():
         scores_names = [ 'geom', 'distance', 'orientation', 'fusion' ]
         methods = [('p', 'prim'), ('c','centr'), ('m','meanshape')]
 
-        saveFigures(methods, scores_names, all_performance, measures, pickle_base, path_figs, thresholds, SCALE)
+        # saveFigures(methods, scores_names, all_performance, measures, pickle_base, path_figs, thresholds, SCALE)
 
         
 
-        # test(measures, path_test, hand_path, pickle_path, norms_path, pickle_base + row_path , NUM_IMGS)
+        test_new(measures, path_test, hand_path, pickle_path, norms_path, pickle_base + row_path , NUM_IMGS)
         
         
 
