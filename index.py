@@ -20,8 +20,8 @@ NUM_IMGS        = 5
 LENGTH          = 300
 SCALE           = 1000
 CALCULATE_PRE   = False
-CALCULATE       = False
-CALCULATE_POST  = False
+CALCULATE       = True
+CALCULATE_POST  = True
 
 hand_base = './hands/'
 path_in = 'dataset/'
@@ -457,10 +457,10 @@ def main():
         
         if CALCULATE_PRE:
                 # save scores
-                shape_normalization, g_scores, d_scores, o_scores = saveScores(LENGTH, n_people, NUM_IMGS, hand_base + path_in, path_out, dist_path, hand_base, pickle_base + scores_path)
+                shape_normalized, g_scores, d_scores, o_scores = saveScores(LENGTH, n_people, NUM_IMGS, hand_base + path_in, path_out, dist_path, hand_base, pickle_base + scores_path)
         else:
                 # load scores
-                shape_normalization = np.load(pickle_base + scores_path + 'tot_shape.npy')
+                shape_normalized = np.load(pickle_base + scores_path + 'tot_shape.npy')
                 g_scores = np.load(pickle_base + scores_path + 'tot_geom.npy')
                 d_scores = np.load(pickle_base + scores_path + 'tot_distance.npy')
                 o_scores = np.load(pickle_base + scores_path + 'tot_orientation.npy')
@@ -469,7 +469,7 @@ def main():
         print('dir_scores : ', d_scores, len(d_scores),  len(d_scores[0]))
         # save imposter matrix of features
         if CALCULATE:
-                I = getFeatureVectors(LENGTH, shape_normalization, g_scores, d_scores, o_scores, hand_base + path_out,  NUM_IMGS, pickle_base, features_matrix_path)
+                I = getFeatureVectors(LENGTH, shape_normalized, g_scores, d_scores, o_scores, hand_base + path_out,  NUM_IMGS, pickle_base, features_matrix_path)
 
         else:
                 # load imposter matrix of features

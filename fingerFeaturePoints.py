@@ -24,7 +24,11 @@ def getReferencePoint(contour, fingers_indexes, center_of_mass):
     # point to rect distance between middle point - centroid rect and all points of semi contour
     d_point_rect = [ np.abs(norm(np.cross(middle_point - center_of_mass, center_of_mass - p))/norm(middle_point - center_of_mass)) for p in semi_contour ]
 
+    print(d_point_rect)
     # get index of point in semicontour that has minimal point to middle point - centroid rect
+    # if d_point_rect == []:
+    #     r_partial_index = 0
+    # else:
     r_partial_index = np.argmin(d_point_rect)
 
     # adjust index of r_point adding 0 finger index ( semi-contour index )

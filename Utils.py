@@ -1,6 +1,7 @@
 import cv2
 import numpy as np
 import os
+from math import ceil
 
 # print(cv2.__version__)
 
@@ -127,3 +128,59 @@ def countPeoplePhoto(path):
                 n_person, n_imgs = len(d.values()), len(list(d.values())[0])
         
         return n_person, n_imgs
+
+def line(x0, y0, x1, y1):
+	"""Bresenham's line algorithm:
+		it takes as input two points as (x0,y0) and (x1,y1) 
+		and returns a list of all the points of the line connecting them"""
+
+	points_in_line = []
+	dx = abs(x1 - x0)
+	dy = abs(y1 - y0)
+	x, y = x0, y0
+	sx = -1 if x0 > x1 else 1
+	sy = -1 if y0 > y1 else 1
+	if dx > dy:
+		err = dx / 2.0
+		while x != x1:
+			points_in_line.append((x, y))
+			err -= dy
+			if err < 0:
+				y += sy
+				err += dx
+			x += sx
+	else:
+		err = dy / 2.0
+		while y != y1:
+			points_in_line.append((x, y))
+			err -= dx
+			if err < 0:
+				x += sx
+				err += dy
+			y += sy
+	points_in_line.append((x, y))
+	return points_in_line
+
+
+def get_numbers(sequence, number):
+	# get N elements from the sequence of elements normally distributed
+	length = float(len(sequence))
+	lista = []
+	for i in range(number):
+		lista.append(sequence[int(ceil(i * length / number))])
+	return lista
+
+
+
+def get_numbers_with_idx(start_idx, end_idx, number):
+	# get N elements from the sequence of elements normally distributed, 
+	# Here the sequence is given as the start element and the final one (we consider the sequence as complete and sorted)
+	sequence = [i for i in range(start_idx, end_idx+1)]
+	return get_numbers(sequence, number)
+
+def distance(alist, blist):
+    sum_of = 0
+    for x, y in zip(alist, blist):
+        ans = (x - y)**2
+        sum_of += ans
+    return (sum_of)**(1/2)
