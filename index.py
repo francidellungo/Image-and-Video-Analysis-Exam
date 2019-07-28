@@ -19,7 +19,7 @@ import numpy as np
 NUM_IMGS        = 5
 LENGTH          = 300
 SCALE           = 1000
-CALCULATE_PRE   = False
+CALCULATE_PRE   = True
 CALCULATE       = True
 CALCULATE_POST  = True
 
@@ -97,7 +97,7 @@ def getNormScores(G, I, cod, measure, scores_path, NUM_IMGS):
         print('Impostor')
         I_scores = []
         for i, method in enumerate(I):
-                print('Impostor ', i)
+                # print('Impostor ', i)
                 I_method = []
                 for f_type, features in enumerate(method):
                         app = getScores(features, cod, measure)
@@ -113,7 +113,7 @@ def getNormScores(G, I, cod, measure, scores_path, NUM_IMGS):
                 I_scores.append(I_method)
         
         print('\n Normalization Scores')
-        print(norm)
+        # print(norm)
         G_norm = ScoresNormalization(G_scores, norm)
         I_norm = []
         for method in I_scores:
@@ -192,7 +192,7 @@ def test_new(measures, path_test, hand_path, pickle_path, norms_path, row_path, 
                                 # test_method: identification success and insucess in the first list, same for  verification
                                 
                                 # calculate distances with old imgs with the new one of the test set
-                                print(' ')
+                                # print(' ')
 
                                 # geometrical features (first the one of the test photo)
                                 new_geom_features = np.append( [g_scores[i]], I[centr_type_i][0].tolist(), axis=0 )
@@ -257,6 +257,7 @@ def test_new(measures, path_test, hand_path, pickle_path, norms_path, row_path, 
                                         
                         test[centr_type] = test_method
                 print(' ')
+                print('measure: ', measure)
                 for key, val in test.items():
                         print('TEST IDEN [SUC, INS] ', key, val[0][0], val[0][1] )
                         print('TEST VERI [SUC, INS] ', key, val[1][0], val[1][1] )
@@ -465,8 +466,9 @@ def main():
                 d_scores = np.load(pickle_base + scores_path + 'tot_distance.npy')
                 o_scores = np.load(pickle_base + scores_path + 'tot_orientation.npy')
 
-        print('g_scores : ', g_scores, len(g_scores),  len(g_scores[0]))
-        print('dir_scores : ', d_scores, len(d_scores),  len(d_scores[0]))
+        # print('g_scores : ', g_scores, len(g_scores),  len(g_scores[0]))
+        # print('dir_scores : ', d_scores, len(d_scores),  len(d_scores[0]))
+
         # save imposter matrix of features
         if CALCULATE:
                 I = getFeatureVectors(LENGTH, shape_normalized, g_scores, d_scores, o_scores, hand_base + path_out,  NUM_IMGS, pickle_base, features_matrix_path)
@@ -521,7 +523,7 @@ def main():
         scores_names = [ 'geom', 'distance', 'orientation', 'fusion' ]
         methods = [('p', 'prim'), ('c','centr'), ('m','meanshape')]
 
-        # saveFigures(methods, scores_names, all_performance, measures, pickle_base, path_figs, thresholds, SCALE)
+        saveFigures(methods, scores_names, all_performance, measures, pickle_base, path_figs, thresholds, SCALE)
 
         
 

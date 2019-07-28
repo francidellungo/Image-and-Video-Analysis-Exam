@@ -63,15 +63,16 @@ def saveScores(LENGTH, w, h, path_in, path_out, dist_path, hand_base, scores_pat
                 # valley_indexes has 5 points updating after complementary search
                 medium_points, valley_indexes, comp_valley_indexes = calculateMediumPoints(r_based_contour, r_based_valley_indexes, r_based_fingers_indexes)
 
-                img = draw(None, r_based_contour, None, r_based_contour[valley_indexes] , point_list_colors = [0,255,0])
-                img = draw(img, [], None, r_based_contour[comp_valley_indexes], point_list_colors = [0,0,255])
-                cv2.imshow('hand normalized', img)
-                cv2.waitKey(0)
-                cv2.destroyAllWindows()
+                # img = draw(None, r_based_contour, None, r_based_contour[valley_indexes] , point_list_colors = [0,255,0], text_colors =None)
+                # img = draw(img, [], None, r_based_contour[comp_valley_indexes], point_list_colors = [0,0,255], text_colors =None)
+                # cv2.circle(img, (int(center_of_mass[0]), int(center_of_mass[1])), 4, (255,0,255), -1)
+                # cv2.imshow('hand normalized', img)
+                # cv2.waitKey(0)
+                # cv2.destroyAllWindows()
                 
 
                 # modify contour so that wrist is cutted off
-                # reference point will be the last complementary valley: on the right of the thumb
+                # the first element of the contour will be the last complementary valley: on the right of the thumb
                 new_contour = r_based_contour[comp_valley_indexes[4]:valley_indexes[0]+1]
 
                 # find and add the points of the line connecting the two extreme points to the contour
@@ -82,34 +83,35 @@ def saveScores(LENGTH, w, h, path_in, path_out, dist_path, hand_base, scores_pat
                
                 valley_indexes = [x - shift_idx for x in valley_indexes]
                 comp_valley_indexes = [x - shift_idx for x in comp_valley_indexes]
-                r_based_fingers_indexes = [x - shift_idx for x in r_based_fingers_indexes]
+                fingers_indexes = [x - shift_idx for x in r_based_fingers_indexes]
 
-                print('compl v idx [4]: ', comp_valley_indexes[4])
+                # print('compl v idx [4]: ', comp_valley_indexes[4])
                 #remove first and last elements that are already considered in the contour
                 line_points = line_points[1:-1]
                 new_contour = np.append(new_contour, [ [[ line_point[0], line_point[1] ]] for line_point in line_points  ], axis = 0  )
 
-                img = draw(None, new_contour, None, new_contour[valley_indexes] , point_list_colors = [0,255,0])
-                img = draw(img, [], None, new_contour[comp_valley_indexes], point_list_colors = [0,0,255])
-                # img = draw(img, [], None, medium_points)
-                cv2.circle(img, (int(center_of_mass[0]), int(center_of_mass[1])), 4, (255,0,255), -1)
-                cv2.imshow('hand normalized', img)
-                cv2.waitKey(0)
-                cv2.destroyAllWindows()
+                # img = draw(None, new_contour, None, new_contour[valley_indexes] , point_list_colors = [0,255,0], text_colors =None)
+                # img = draw(img, [], None, new_contour[comp_valley_indexes], point_list_colors = [0,0,255], text_colors =None)
+                # # img = draw(img, [], None, medium_points)
+                # cv2.circle(img, (int(center_of_mass[0]), int(center_of_mass[1])), 4, (255,0,255), -1)
+                # cv2.imshow('hand normalized', img)
+                # cv2.waitKey(0)
+                # cv2.destroyAllWindows()
 
 
                 # return: contour, medium_points, center of mass has to be the same
-                new_contour, medium_points, center_of_mass = shapeNormalization(LENGTH, new_contour, center_of_mass, r_based_fingers_indexes, medium_points)
-                shape_normalized.append(((new_contour, center_of_mass), (medium_points, r_based_fingers_indexes, comp_valley_indexes, valley_indexes)))
+                new_contour, medium_points, center_of_mass = shapeNormalization(LENGTH, new_contour, center_of_mass, fingers_indexes, medium_points)
+                shape_normalized.append(((new_contour, center_of_mass), (medium_points, fingers_indexes, comp_valley_indexes, valley_indexes)))
 
 
                 # to extract geometrical features we used non rotated fingers 
-                _, geom_features = extractGeometricalFeatures(new_contour[r_based_fingers_indexes], medium_points)
+                _, geom_features = extractGeometricalFeatures(new_contour[fingers_indexes], medium_points)
 
                 print('\n saveScores \n')
-                updated_contour = fingerRegistration(copy.deepcopy(new_contour), center_of_mass, new_contour[r_based_fingers_indexes], medium_points, comp_valley_indexes, valley_indexes)
+                updated_contour = fingerRegistration(copy.deepcopy(new_contour), center_of_mass, new_contour[fingers_indexes], medium_points, comp_valley_indexes, valley_indexes)
 
-                distance_features, orientation_features, _, _  = extractShapeFeatures(updated_contour, 0)
+                
+                distance_features, orientation_features, dp, op = extractShapeFeatures(updated_contour, r_index)
 
                 geom_scores.append(geom_features)
                 distance_scores.append(distance_features)
@@ -134,7 +136,6 @@ def saveScores(LENGTH, w, h, path_in, path_out, dist_path, hand_base, scores_pat
         return shape_normalized, geom_scores, distance_scores, orientation_scores
 
 
-# def saveRepresentatives(scores, score_name, scores_path):
 def shapeNormalization(LENGTH, r_based_contour, center_of_mass, r_based_fingers_indexes, medium_points):
         
         # print(center_of_mass)
@@ -174,7 +175,6 @@ def getFeatureVectors(LENGTH, shape_normalization, g_scores, d_scores, o_scores,
 
         mean_shapes, shapes, maxi_centroid, size = findMeanshape(int(LENGTH/50), shape_normalization, NUM_IMGS)
 
-        # TODO remove centroids
         centroids_indexes = calculateCentroidIndexes(mean_shapes, shapes, NUM_IMGS)
 
         centroids = []
@@ -213,7 +213,8 @@ def getFeatureVectors(LENGTH, shape_normalization, g_scores, d_scores, o_scores,
 
                 updated_contour = fingerRegistration(copy.deepcopy(r_based_contour), center_of_mass, r_based_contour[r_based_fingers_indexes], medium_points, comp_valley_indexes, valley_indexes)
 
-                distance_features, orientation_features, _, _  = extractShapeFeatures(updated_contour, 0)
+                
+                distance_features, orientation_features, _, _  = extractShapeFeatures(updated_contour, r_index)
                 g_means.append(geom_features)
                 d_means.append(distance_features.tolist())
                 o_means.append(orientation_features.tolist())
@@ -296,7 +297,7 @@ def findMeanshape(alpha, shape_normalization, NUM_IMGS):
         # joint the points with lines (maybe better with an interpolating function?)
 
         mean_shapes = []
-        NUM_POINTS = 100
+        NUM_POINTS = 80
 
         for person_idx in  range(int(len(shape_normalization)/NUM_IMGS)):
                 person_shapes = shapes[person_idx*NUM_IMGS:(person_idx+1)*NUM_IMGS]
@@ -332,7 +333,7 @@ def findMeanshape(alpha, shape_normalization, NUM_IMGS):
                         value = landmarks[:,i]
                         # print(np.mean(value, axis = 0))
                         mean_landmarks.append( np.round(np.mean(value, axis = 0)).astype(int).tolist() )
-                print('len mean landmarks: ', len(mean_landmarks), len(mean_landmarks[0]), len(mean_landmarks[0][0]))
+                # print('len mean landmarks: ', len(mean_landmarks), len(mean_landmarks[0]), len(mean_landmarks[0][0]))
 
                 # generate points btw the mean landmarks if they are not consecutive
                 mean_shape_cnt = []
@@ -353,21 +354,21 @@ def findMeanshape(alpha, shape_normalization, NUM_IMGS):
                 mean_shape_cnt = np.array(mean_shape_cnt)
                 mean_shapes.append(mean_shape_cnt)
 
-                person_shape = np.array(person_shapes[0])
-                img = draw(None, person_shape , cnt_color = [255,0,0], point_lists = [] )
-                person_shape = np.array(person_shapes[1])
-                img = draw(img, person_shape , cnt_color = [255,0,0], point_lists = [] )
-                person_shape = np.array(person_shapes[2])
-                img = draw(img, person_shape , cnt_color = [255,0,0], point_lists = [] )
-                person_shape = np.array(person_shapes[3])
-                img = draw(img, person_shape , cnt_color = [255,0,0], point_lists = [] )
-                person_shape = np.array(person_shapes[4])
-                img = draw(img, person_shape , cnt_color = [255,0,0], point_lists = [] )
+                # person_shape = np.array(person_shapes[0])
+                # img = draw(None, person_shape , cnt_color = [255,0,0], point_lists = [] )
+                # person_shape = np.array(person_shapes[1])
+                # img = draw(img, person_shape , cnt_color = [255,0,0], point_lists = [] )
+                # person_shape = np.array(person_shapes[2])
+                # img = draw(img, person_shape , cnt_color = [255,0,0], point_lists = [] )
+                # person_shape = np.array(person_shapes[3])
+                # img = draw(img, person_shape , cnt_color = [255,0,0], point_lists = [] )
+                # person_shape = np.array(person_shapes[4])
+                # img = draw(img, person_shape , cnt_color = [255,0,0], point_lists = [] )
 
-                img = draw(img, mean_shape_cnt, None, [] )
-                cv2.imshow('hand mean shape', img)
-                cv2.waitKey(0)
-                cv2.destroyAllWindows()
+                # img = draw(img, mean_shape_cnt, None, [] )
+                # cv2.imshow('hand mean shape', img)
+                # cv2.waitKey(0)
+                # cv2.destroyAllWindows()
 
 
         
@@ -403,6 +404,7 @@ def findMeanshape(alpha, shape_normalization, NUM_IMGS):
         #         cnt = contours[0]
         #         mean_shapes.append(cnt)
 
+           
 
         return mean_shapes, shapes, centroid, size
 

@@ -17,14 +17,20 @@ def getReferencePoint(contour, fingers_indexes, center_of_mass):
     # print(middle_index)
     middle_point = contour[middle_index]
     
-    semi_contour = contour[fingers_indexes[0]:fingers_indexes[-1]]
+    if fingers_indexes[0] < fingers_indexes[-1]:
+        cnt_starting_middle_finger = True
+        semi_contour = contour[fingers_indexes[0]:fingers_indexes[-1]]
+    else:
+        cnt_starting_middle_finger = False
+        semi_contour = contour[:fingers_indexes[-1]]
+        semi_contour = np.append(semi_contour, contour[fingers_indexes[0]:] , axis = 0)
 
     center_of_mass = np.asarray(center_of_mass)
 
     # point to rect distance between middle point - centroid rect and all points of semi contour
     d_point_rect = [ np.abs(norm(np.cross(middle_point - center_of_mass, center_of_mass - p))/norm(middle_point - center_of_mass)) for p in semi_contour ]
 
-    print(d_point_rect)
+    # print(d_point_rect)
     # get index of point in semicontour that has minimal point to middle point - centroid rect
     # if d_point_rect == []:
     #     r_partial_index = 0
@@ -32,7 +38,13 @@ def getReferencePoint(contour, fingers_indexes, center_of_mass):
     r_partial_index = np.argmin(d_point_rect)
 
     # adjust index of r_point adding 0 finger index ( semi-contour index )
-    r_index = fingers_indexes[0] + r_partial_index
+    if cnt_starting_middle_finger == True:
+        r_index = fingers_indexes[0] + r_partial_index
+    else:
+        if r_partial_index <= fingers_indexes[-1]:
+            r_index = r_partial_index
+        else:
+            r_index = r_partial_index + fingers_indexes[0] - fingers_indexes[-1]
 
     # return point and index
     r_point = contour[r_index]
